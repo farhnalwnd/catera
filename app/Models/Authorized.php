@@ -49,4 +49,9 @@ class Authorized extends Model
     {
         return $this->hasOne(Registered::class, 'authorized_uuid', 'uuid');
     }
+
+    // public static function getGloballySearchableAttributes(): array
+    // {
+    //     return ['uuid', 'group', 'user.first_name', 'user.last_name'];
+    // }
 }

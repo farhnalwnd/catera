@@ -46,7 +46,7 @@ class ScheduleAddQuota extends Command
                         ->where('id', $registered->id)
                         ->update([
                             'status' => 'success',
-                            'updated_at' => now()
+                            'updated_at' => now(),
                         ]);
                 });
             }
