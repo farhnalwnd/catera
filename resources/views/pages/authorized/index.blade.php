@@ -58,20 +58,21 @@ new class extends Component
             'authorizeds' => Authorized::query()
                 ->with('user')
                 ->when($this->search, function ($query) {
-                    $query->whereHas('user', function ($q) {
-                        $q->whereRaw(
-                            "to_tsvector('simple', coalesce(first_name, '') || ' ' || coalesce(last_name, '') || ' ' || coalesce(nik::text, '')) @@ plainto_tsquery('simple', ?)",
-                            [$this->search]
-                        );
-                    })->orWhere(function ($q) {
-                        $q->whereRaw("to_tsvector('simple', coalesce(uuid, '') || ' ' || coalesce(\"group\", '')) @@ plainto_tsquery('simple', ?)", [$this->search]);
+                    $query->where(function ($q) {
+                        $q->where('uuid', 'ilike', $this->search . '%')
+                          ->orWhere('group', 'ilike', $this->search . '%')
+                          ->orWhereHas('user', function ($userQuery) {
+                              $userQuery->where('first_name', 'ilike', $this->search . '%')
+                                        ->orWhere('last_name', 'ilike', $this->search . '%')
+                                        ->orWhere('nik', 'ilike', $this->search . '%');
+                          });
                     });
                 })
                 ->when($this->activeOnly, fn ($query) => $query->where('is_active', true))
                 ->paginate(10),
 
             'unauthorizeds' => \App\Models\Unauthorized::when($this->addUuidSearch, function ($query) {
-                return $query->where('uuid', 'like', "{$this->addUuidSearch}%");
+                return $query->where('uuid', 'ilike', "{$this->addUuidSearch}%");
             })
                 ->orderBy('created_at', 'desc')
                 ->take(8)
@@ -80,8 +81,8 @@ new class extends Component
             'portalUsers' => DB::table('portal_application.users')
                 ->when($this->addUserSearch, function ($q) {
                     $q->where(function ($inner) {
-                        $inner->whereRaw("LOWER(first_name || ' ' || last_name) LIKE ?", [strtolower("%{$this->addUserSearch}%")])
-                            ->orWhereRaw('LOWER(nik::text) LIKE ?', [strtolower("%{$this->addUserSearch}%")]);
+                        $inner->whereRaw("LOWER(first_name || ' ' || last_name) LIKE ?", [strtolower("{$this->addUserSearch}%")])
+                            ->orWhereRaw('LOWER(nik::text) LIKE ?', [strtolower("{$this->addUserSearch}%")]);
                     });
                 })
                 ->select('id', 'nik', 'first_name', 'last_name')
@@ -342,10 +343,10 @@ new class extends Component
                 />
             </div>
 
-            <flux:select wire:model="editGroup" label="Group" placeholder="Select group...">
-                <option value="merah">Merah</option>
-                <option value="biru">Biru</option>
-            </flux:select>
+            <flux:radio.group wire:model="editGroup" label="Group" variant="cards" class="flex">
+                <flux:radio value="merah" label="Merah" description="Group Merah" />
+                <flux:radio value="biru" label="Biru" description="Group Biru" />
+            </flux:radio.group>
 
             <flux:input wire:model="editQuota" label="Quota" type="number" />
 
@@ -394,10 +395,10 @@ new class extends Component
                 :options="$portalUsers"
             />
 
-            <flux:select wire:model="addGroup" label="Group" placeholder="Select group...">
-                <option value="merah">Merah</option>
-                <option value="biru">Biru</option>
-            </flux:select>
+            <flux:radio.group wire:model="addGroup" label="Group" variant="cards" class="flex">
+                <flux:radio value="merah" label="Merah" description="Group Merah" />
+                <flux:radio value="biru" label="Biru" description="Group Biru" />
+            </flux:radio.group>
 
             <flux:input wire:model="addQuota" label="Quota" type="number" />
 

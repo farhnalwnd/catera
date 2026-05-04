@@ -61,10 +61,12 @@ new class extends Component
                 ->with('authorized')
                 ->where('status', $this->currentTab)
                 ->when($this->search, function ($query) {
-                    $query->whereHas('authorized', function ($q) {
-                        $q->where('uuid', 'like', "{$this->search}%")
-                            ->orWhere('first_name', 'like', "{$this->search}%")
-                            ->orWhere('last_name', 'like', "{$this->search}%");
+                    $query->whereHas('authorized.user', function ($q) {
+                        $q->where('first_name', 'ilike', "{$this->search}%")
+                          ->orWhere('last_name', 'ilike', "{$this->search}%")
+                          ->orWhere('nik', 'ilike', "{$this->search}%");
+                    })->orWhereHas('authorized', function ($q) {
+                        $q->where('uuid', 'ilike', "{$this->search}%");
                     });
                 })
                 ->orderBy('target_date', 'asc')
@@ -72,7 +74,13 @@ new class extends Component
             'availableAuthorizeds' => Authorized::query()
                 ->active()
                 ->when($this->addAuthorizedUuidSearch, function ($query) {
-                    $query->whereFullText(['uuid', 'nik', 'group', 'first_name', 'last_name'], $this->addAuthorizedUuidSearch.' * ', ['mode' => 'boolean']);
+                    $query->where(function ($q) {
+                        $q->whereFullText(['uuid', 'group'], $this->addAuthorizedUuidSearch.' * ', ['mode' => 'boolean'])
+                          ->orWhereHas('user', function ($userQuery) {
+                              $userQuery->where('first_name', 'ilike', "{$this->addAuthorizedUuidSearch}%")
+                                        ->orWhere('last_name', 'ilike', "{$this->addAuthorizedUuidSearch}%");
+                          });
+                    });
                 })
                 ->take(8)
                 ->get(),
@@ -84,7 +92,7 @@ new class extends Component
         $registered = Registered::with('authorized')->findOrFail($id);
         $this->editingRegisteredId = $id;
         $this->editAuthorizedUuid = $registered->authorized->uuid ?? '';
-        $this->editAuthorizedName = trim(($registered->authorized->first_name ?? '').' '.($registered->authorized->last_name ?? ''));
+        $this->editAuthorizedName = trim(($registered->authorized->user->first_name ?? '').' '.($registered->authorized->user->last_name ?? ''));
         $this->editAddQuota = $registered->add_quota;
         $this->editTargetDate = $registered->target_date ? $registered->target_date->toDateString() : '';
         $this->editStatus = $registered->status;
@@ -244,7 +252,7 @@ new class extends Component
                             </td>
                             <td class="px-4 py-3.5 text-center">
                                 <span class="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                                    {{ $registered->authorized->first_name ?? '' }} {{ $registered->authorized->last_name ?? '' }}
+                                    {{ $registered->authorized->user->first_name ?? '' }} {{ $registered->authorized->user->last_name ?? '' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-center">
@@ -340,8 +348,8 @@ new class extends Component
 
             @php
                 $availOptions = $availableAuthorizeds->map(function($auth) {
-                    $name = trim($auth->first_name . ' ' . $auth->last_name);
-                    $nik = $auth->nik ?? 'N/A';
+                    $name = trim($auth->user->first_name . ' ' . $auth->user->last_name);
+                    $nik = $auth->user->nik ?? 'N/A';
                     return [
                         'id' => $auth->uuid,
                         'name' => "{$name} - {$nik}"
