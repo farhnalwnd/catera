@@ -16,9 +16,12 @@ class Registered extends Model
         'status',
     ];
 
-    protected $casts = [
-        'target_date' => 'date',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'target_date' => 'date',
+        ];
+    }
 
     /**
      * Get the authorized associated with the registered record.

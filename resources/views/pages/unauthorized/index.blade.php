@@ -18,7 +18,7 @@ new class extends Component {
         return [
             'unauthorizeds' => Unauthorized::query()
                 ->when($this->search, function ($query) {
-                    $query->where('uuid', 'like', '%' . $this->search . '%');
+                    $query->where('uuid', 'ilike', '%' . $this->search . '%');
                 })
                 ->orderBy('created_at', 'desc')
                 ->paginate(10),

@@ -58,24 +58,28 @@ new class extends Component
     {
         return [
             'registereds' => Registered::query()
-                ->with('authorized')
+                ->with('authorized.user')
                 ->where('status', $this->currentTab)
                 ->when($this->search, function ($query) {
-                    $query->whereHas('authorized.user', function ($q) {
-                        $q->where('first_name', 'ilike', "{$this->search}%")
-                          ->orWhere('last_name', 'ilike', "{$this->search}%")
-                          ->orWhere('nik', 'ilike', "{$this->search}%");
-                    })->orWhereHas('authorized', function ($q) {
-                        $q->where('uuid', 'ilike', "{$this->search}%");
+                    $query->where(function ($q) {
+                        $q->whereHas('authorized.user', function ($uq) {
+                            $uq->where('first_name', 'ilike', "{$this->search}%")
+                               ->orWhere('last_name', 'ilike', "{$this->search}%")
+                               ->orWhere('nik', 'ilike', "{$this->search}%");
+                        })->orWhereHas('authorized', function ($aq) {
+                            $aq->where('uuid', 'ilike', "{$this->search}%");
+                        });
                     });
                 })
                 ->orderBy('target_date', 'asc')
                 ->paginate(10),
             'availableAuthorizeds' => Authorized::query()
+                ->with('user')
                 ->active()
                 ->when($this->addAuthorizedUuidSearch, function ($query) {
                     $query->where(function ($q) {
-                        $q->whereFullText(['uuid', 'group'], $this->addAuthorizedUuidSearch.' * ', ['mode' => 'boolean'])
+                        $q->where('uuid', 'ilike', "{$this->addAuthorizedUuidSearch}%")
+                          ->orWhere('group', 'ilike', "{$this->addAuthorizedUuidSearch}%")
                           ->orWhereHas('user', function ($userQuery) {
                               $userQuery->where('first_name', 'ilike', "{$this->addAuthorizedUuidSearch}%")
                                         ->orWhere('last_name', 'ilike', "{$this->addAuthorizedUuidSearch}%");
@@ -89,7 +93,7 @@ new class extends Component
 
     public function edit($id)
     {
-        $registered = Registered::with('authorized')->findOrFail($id);
+        $registered = Registered::with('authorized.user')->findOrFail($id);
         $this->editingRegisteredId = $id;
         $this->editAuthorizedUuid = $registered->authorized->uuid ?? '';
         $this->editAuthorizedName = trim(($registered->authorized->user->first_name ?? '').' '.($registered->authorized->user->last_name ?? ''));
@@ -246,7 +250,7 @@ new class extends Component
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                     @forelse ($registereds as $registered)
-                        <tr class="transition-colors duration-150 hover:bg-hover/20 dark:hover:bg-hover/30">
+                        <tr class="transition-colors duration-150 hover:bg-hover/20 dark:hover:bg-hover/30" wire:key="registered-{{ $registered->id }}">
                             <td class="px-4 py-3.5 text-center">
                                 <span class="font-mono text-xs text-zinc-600 dark:text-zinc-400">{{ $registered->authorized->uuid ?? 'N/A' }}</span>
                             </td>

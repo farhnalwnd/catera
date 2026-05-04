@@ -13,28 +13,29 @@
     --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
     --font-heading: "Figtree", sans-serif;
 
-    /* Medical Zinc Palette (Light) - Clean & Whitish */
-    --color-zinc-50: #f8fafc;
-    --color-zinc-100: #f1f5f9;
-    --color-zinc-200: #e2e8f0;
-    --color-zinc-300: #cbd5e1;
-    --color-zinc-400: #94a3b8;
-    --color-zinc-500: #64748b;
-    --color-zinc-600: #475569;
-    --color-zinc-700: #334155;
-    --color-zinc-800: #1e293b;
-    --color-zinc-900: #0f172a;
-    --color-zinc-950: #020617;
-
-    --color-primary: #06b6d4; /* Vibrant Cyan */
-    --color-secondary: #0ea5e9; /* Sky Blue */
-    --color-cta: #10b981; /* Emerald */
+    /* User Provided Palette: Sturdy & Professional */
+    --color-primary: #4DA8CF; /* Air Force Blue */
+    --color-secondary: #6DC5EE; /* Sky Blue */
+    --color-cta: #3F8F81; /* Sea Green */
+    --color-sturdy: #5B5856; /* Sturdy Grey */
     
-    --color-background: var(--color-zinc-50);
-    --color-text-heading: #0f172a;
-    --color-text-body: #334155;
+    --color-zinc-50: #f7f7f7;
+    --color-zinc-100: #e8e8e8;
+    --color-zinc-200: #d1d1d1;
+    --color-zinc-300: #b0b0b0;
+    --color-zinc-400: #888888;
+    --color-zinc-500: #5B5856; /* Sturdy Grey as Mid-point */
+    --color-zinc-600: #4a4746;
+    --color-zinc-700: #3a3837;
+    --color-zinc-800: #2b2a29;
+    --color-zinc-900: #1f1e1d;
+    --color-zinc-950: #141312;
 
-    --color-hover: #0891b2;
+    --color-background: #ffffff;
+    --color-text-heading: var(--color-sturdy);
+    --color-text-body: #4a4746;
+
+    --color-hover: #3b88a8;
 
     --color-accent: var(--color-primary);
     --color-accent-content: var(--color-primary);
@@ -43,25 +44,24 @@
 
 @layer theme {
     .dark {
-        /* Medical Zinc Palette (Dark) - Cohesive Medical Blue */
-        --color-zinc-50: #cffafe;
-        --color-zinc-100: #a5f3fc;
-        --color-zinc-200: #67e8f9;
-        --color-zinc-300: #22d3ee;
-        --color-zinc-400: #06b6d4;
-        --color-zinc-500: #0891b2;
-        --color-zinc-600: #0e7490;
-        --color-zinc-700: #155e75; /* Cyan 800 */
-        --color-zinc-800: #164e63; /* Cyan 900 - Lighter Medical Blue for Sidebar */
-        --color-zinc-900: #0e3746; /* Custom Dark Medical Blue */
-        --color-zinc-950: #082430; /* Deep Cohesive Medical Blue for Background */
+        --color-zinc-50: #141312;
+        --color-zinc-100: #1f1e1d;
+        --color-zinc-200: #2b2a29;
+        --color-zinc-300: #3a3837;
+        --color-zinc-400: #4a4746;
+        --color-zinc-500: #5B5856;
+        --color-zinc-600: #888888;
+        --color-zinc-700: #b0b0b0;
+        --color-zinc-800: #d1d1d1;
+        --color-zinc-900: #e8e8e8;
+        --color-zinc-950: #f7f7f7;
 
-        --color-background: var(--color-zinc-950);
-        --color-text-heading: #ecfeff;
-        --color-text-body: #a5f3fc;
+        --color-background: #0d0c0c;
+        --color-text-heading: #e8e8e8;
+        --color-text-body: #b0b0b0;
         
-        --color-primary: #06b6d4;
-        --color-secondary: #0ea5e9;
+        --color-primary: #4DA8CF;
+        --color-secondary: #6DC5EE;
         
         --color-accent: var(--color-primary);
         --color-accent-content: var(--color-primary);

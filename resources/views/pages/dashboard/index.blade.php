@@ -3,32 +3,45 @@
 use App\Models\Authorized;
 use App\Models\Unauthorized;
 use App\Models\Registered;
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 new class extends Component {
     public function with(): array
     {
         // Get trend data for the last 30 days
-        $trends = Registered::selectRaw('DATE(target_date) as date, sum(add_quota) as total')
+        $trends = Registered::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
+            ->whereNotNull('target_date')
+            ->where('target_date', '>=', now()->subDays(30)->toDateString())
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'x' => $item->date,
                 'y' => (int) $item->total,
             ])
             ->toArray();
 
+        // Single aggregated query instead of 5 separate COUNT queries
+        $authorizedStats = Authorized::query()
+            ->selectRaw(
+                'COUNT(*) as total,
+                SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_count,
+                SUM(CASE WHEN is_active = false THEN 1 ELSE 0 END) as inactive_count,
+                SUM(CASE WHEN "group" = ? THEN 1 ELSE 0 END) as merah_count,
+                SUM(CASE WHEN "group" = ? THEN 1 ELSE 0 END) as biru_count',
+                ['merah', 'biru']
+            )
+            ->first();
+
         return [
             'stats' => [
-                'total_authorized' => Authorized::count(),
+                'total_authorized' => (int) $authorizedStats->total,
                 'total_unauthorized' => Unauthorized::count(),
                 'total_quota' => (int) Registered::sum('add_quota'),
-                'active_count' => Authorized::where('is_active', true)->count(),
-                'inactive_count' => Authorized::where('is_active', false)->count(),
-                'merah_count' => Authorized::where('group', 'merah')->count(),
-                'biru_count' => Authorized::where('group', 'biru')->count(),
+                'active_count' => (int) $authorizedStats->active_count,
+                'inactive_count' => (int) $authorizedStats->inactive_count,
+                'merah_count' => (int) $authorizedStats->merah_count,
+                'biru_count' => (int) $authorizedStats->biru_count,
             ],
             'trends' => $trends,
         ];
