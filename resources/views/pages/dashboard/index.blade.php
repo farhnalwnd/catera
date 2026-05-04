@@ -110,13 +110,13 @@ new class extends Component {
             }],
             plotOptions: {
                 bar: {
-                    borderRadius: 8,
-                    columnWidth: '50%',
+                    borderRadius: 12,
+                    columnWidth: '45%',
                     distributed: true,
                     dataLabels: { position: 'top' }
                 }
             },
-            colors: ['#22c55e', '#a1a1aa'],
+            colors: ['#0891B2', '#94A3B8'],
             xaxis: {
                 categories: ['Active', 'Inactive'],
                 axisBorder: { show: false },
@@ -127,7 +127,7 @@ new class extends Component {
             dataLabels: {
                 enabled: true,
                 offsetY: -20,
-                style: { fontSize: '12px', colors: ['#304758'] }
+                style: { fontSize: '12px', colors: ['#134E4A'] }
             }
         }).render();
 
@@ -149,19 +149,19 @@ new class extends Component {
                 labels: { datetimeUTC: false }
             },
             yaxis: { title: { text: 'Quota' } },
-            colors: ['#8b5cf6'],
+            colors: ['#0891B2'],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
                 gradient: {
                     shadeIntensity: 1,
-                    opacityFrom: 0.45,
-                    opacityTo: 0.05,
-                    stops: [20, 100, 100, 100]
+                    opacityFrom: 0.6,
+                    opacityTo: 0.1,
+                    stops: [0, 90, 100]
                 }
             },
-            markers: { size: 4, strokeWidth: 2, hover: { size: 6 } },
-            grid: { borderColor: '#f1f1f1' }
+            markers: { size: 5, strokeWidth: 3, hover: { size: 7 } },
+            grid: { borderColor: '#e2e8f0' }
         }).render();
     }
 }">
@@ -174,46 +174,52 @@ new class extends Component {
     </div>
 
     {{-- Stats Cards --}}
-    <div class="grid grid-cols-3 gap-4">
-        <flux:card class="relative flex flex-col gap-1 overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <flux:icon name="users" variant="mini" />
+                <div class="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                    <flux:icon name="users" variant="mini" />
+                </div>
                 <flux:text size="sm" font="medium">Total Authorized</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl">{{ number_format($stats['total_authorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-green-500 font-medium">Verified Users</flux:text>
+                <flux:heading size="xl" class="group-hover:text-primary transition-colors">{{ number_format($stats['total_authorized']) }}</flux:heading>
+                <flux:text size="xs" class="text-green-500 font-semibold bg-green-500/10 px-2 py-0.5 rounded-full">Verified</flux:text>
             </div>
-            <div class="absolute -right-4 -top-4 opacity-10">
-                 <flux:icon name="users" size="xl" class="size-24" />
+            <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                 <flux:icon name="users" size="xl" class="size-32" />
             </div>
         </flux:card>
 
-        <flux:card class="relative flex flex-col gap-1 overflow-hidden">
+        <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <flux:icon name="exclamation-triangle" variant="mini" />
+                <div class="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                    <flux:icon name="exclamation-triangle" variant="mini" />
+                </div>
                 <flux:text size="sm" font="medium">Unauthorized Attempts</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl">{{ number_format($stats['total_unauthorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-red-500 font-medium">Recent Blocks</flux:text>
+                <flux:heading size="xl" class="group-hover:text-red-500 transition-colors">{{ number_format($stats['total_unauthorized']) }}</flux:heading>
+                <flux:text size="xs" class="text-red-500 font-semibold bg-red-500/10 px-2 py-0.5 rounded-full">Blocked</flux:text>
             </div>
-             <div class="absolute -right-4 -top-4 opacity-10">
-                 <flux:icon name="exclamation-triangle" size="xl" class="size-24" />
+             <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                 <flux:icon name="exclamation-triangle" size="xl" class="size-32" />
             </div>
         </flux:card>
 
-        <flux:card class="relative flex flex-col gap-1 overflow-hidden">
+        <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <flux:icon name="bolt" variant="mini" />
-                <flux:text size="sm" font="medium">Total Quota Distributed</flux:text>
+                <div class="p-2 rounded-lg bg-cta/10 text-cta group-hover:bg-cta group-hover:text-white transition-colors">
+                    <flux:icon name="bolt" variant="mini" />
+                </div>
+                <flux:text size="sm" font="medium">Quota Distributed</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl">{{ number_format($stats['total_quota']) }}</flux:heading>
-                <flux:text size="xs" class="text-blue-500 font-medium">Units Added</flux:text>
+                <flux:heading size="xl" class="group-hover:text-cta transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
+                <flux:text size="xs" class="text-blue-500 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">Units</flux:text>
             </div>
-             <div class="absolute -right-4 -top-4 opacity-10">
-                 <flux:icon name="bolt" size="xl" class="size-24" />
+             <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                 <flux:icon name="bolt" size="xl" class="size-32" />
             </div>
         </flux:card>
     </div>

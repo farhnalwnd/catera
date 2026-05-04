@@ -13,29 +13,29 @@
     --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
     --font-heading: "Figtree", sans-serif;
 
-    /* User Provided Palette: Sturdy & Professional */
-    --color-primary: #4DA8CF; /* Air Force Blue */
-    --color-secondary: #6DC5EE; /* Sky Blue */
-    --color-cta: #3F8F81; /* Sea Green */
-    --color-sturdy: #5B5856; /* Sturdy Grey */
+    /* Medical & Professional Palette */
+    --color-primary: #0891B2; /* Medical Teal */
+    --color-secondary: #22D3EE; /* Sky Blue Accent */
+    --color-cta: #22C55E; /* Health Green */
+    --color-sturdy: #134E4A; /* Deep Teal for Text/Heading */
     
     --color-zinc-50: #f7f7f7;
     --color-zinc-100: #e8e8e8;
     --color-zinc-200: #d1d1d1;
     --color-zinc-300: #b0b0b0;
     --color-zinc-400: #888888;
-    --color-zinc-500: #5B5856; /* Sturdy Grey as Mid-point */
+    --color-zinc-500: #5B5856;
     --color-zinc-600: #4a4746;
     --color-zinc-700: #3a3837;
     --color-zinc-800: #2b2a29;
     --color-zinc-900: #1f1e1d;
     --color-zinc-950: #141312;
 
-    --color-background: #ffffff;
+    --color-background: #E0F7FA; /* Lighter version of #22D3EE */
     --color-text-heading: var(--color-sturdy);
-    --color-text-body: #4a4746;
+    --color-text-body: #134E4A;
 
-    --color-hover: #3b88a8;
+    --color-hover: #0e7490;
 
     --color-accent: var(--color-primary);
     --color-accent-content: var(--color-primary);
@@ -44,24 +44,24 @@
 
 @layer theme {
     .dark {
-        --color-zinc-50: #141312;
-        --color-zinc-100: #1f1e1d;
-        --color-zinc-200: #2b2a29;
-        --color-zinc-300: #3a3837;
-        --color-zinc-400: #4a4746;
+        --color-zinc-50: #f7f7f7;
+        --color-zinc-100: #e8e8e8;
+        --color-zinc-200: #d1d1d1;
+        --color-zinc-300: #b0b0b0;
+        --color-zinc-400: #888888;
         --color-zinc-500: #5B5856;
-        --color-zinc-600: #888888;
-        --color-zinc-700: #b0b0b0;
-        --color-zinc-800: #d1d1d1;
-        --color-zinc-900: #e8e8e8;
-        --color-zinc-950: #f7f7f7;
+        --color-zinc-600: #4a4746;
+        --color-zinc-700: #3a3837;
+        --color-zinc-800: #2b2a29;
+        --color-zinc-900: #1f1e1d;
+        --color-zinc-950: #141312;
 
-        --color-background: #0d0c0c;
-        --color-text-heading: #e8e8e8;
-        --color-text-body: #b0b0b0;
+        --color-background: #0d1a19; /* Deep Teal Black for Background */
+        --color-text-heading: #e0f2f1;
+        --color-text-body: #b2dfdb;
         
-        --color-primary: #4DA8CF;
-        --color-secondary: #6DC5EE;
+        --color-primary: #0891B2;
+        --color-secondary: #22D3EE;
         
         --color-accent: var(--color-primary);
         --color-accent-content: var(--color-primary);
@@ -108,3 +108,9 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+/* Flux Sidebar Active Item Overrides */
+[data-flux-sidebar-item][data-current] {
+    border-width: 0 !important;
+    box-shadow: none !important;
+}

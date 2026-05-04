@@ -4,14 +4,14 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-background">
-        <flux:sidebar sticky collapsible="mobile" class="dark border-e border-zinc-700 bg-zinc-800 text-zinc-200">
+        <flux:sidebar sticky collapsible="true" class="border-e border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
+                <flux:sidebar.group :heading="__('CATERA MANAGEMENT')" class="grid">
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate color="primary">
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
@@ -37,7 +37,7 @@
 
 
         <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden">
+        <flux:header class="lg:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />

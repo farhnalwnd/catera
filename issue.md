@@ -1,24 +1,50 @@
-# [UI/UX] Penyesuaian Warna Sidebar, Tabel, dan Search Tab
+# [UI/UX] Implementasi Tema Medis & Modernisasi Dashboard
 
-## Deskripsi
-Terdapat kebutuhan untuk menyesuaikan tampilan antarmuka (UI) aplikasi agar lebih sesuai dengan branding dan adaptif terhadap sistem tema (Light/Dark mode). Fokus pengerjaan ada pada komponen navigasi (Sidebar), tabel data, dan elemen pencarian (Search Tab).
+## Target
+- Tema Website (Global)
+- UI Dashboard (`resources/views/pages/dashboard/index.blade.php`)
 
-## Target Komponen
-- Sidebar (Navigasi Kiri / Utama)
-- Tabel Data (terutama di dalam `/resources/views/pages/`)
-- Search Tab / Input Pencarian
+## Deskripsi Tugas
+Issue ini bertujuan untuk mengubah tema aplikasi agar lebih sesuai dengan konteks medis (Healthcare) dan memperbarui tampilan Dashboard agar terlihat lebih modern, bersih, dan profesional. 
 
-## Daftar Tugas (Tasks)
+Berdasarkan hasil analisis dari *UI/UX Pro Max*, berikut adalah Design System yang harus diterapkan:
 
-- [ ] **Ubah Warna Sidebar:**
-  Implementasikan warna latar belakang (background) pada Sidebar menggunakan warna biru dengan kode hex `#6DC5EE`. Pastikan warna teks, ikon, dan elemen *hover* di dalam sidebar disesuaikan agar tetap memiliki kontras yang baik dan mudah dibaca.
+### Design System: Medical Clean (Accessible & Ethical)
+- **Konsep:** Minimalis, fokus pada kontras tinggi, whitespace luas, dan *accessibility* (WCAG compliant).
+- **Palet Warna Utama:**
+  - **Primary:** `#0891B2` (Cyan/Teal medis)
+  - **Secondary:** `#22D3EE`
+  - **CTA/Success:** `#22C55E` (Health Green)
+  - **Background:** `#F0FDFA` (Light Cyan untuk latar belakang halaman)
+  - **Text:** `#134E4A` (Dark Cyan/Slate untuk teks utama)
+- **Tipografi:**
+  - **Heading:** `Figtree` (Font modern & bersih)
+  - **Body:** `Noto Sans` (Tingkat keterbacaan tinggi)
+- **Anti-patterns (JANGAN digunakan):**
+  - Warna neon terang mencolok
+  - Animasi yang berlebihan
+  - Gradien ungu/pink
 
-- [ ] **Adaptasi Tema (Light/Dark Mode) pada Tabel dan Pencarian:**
-  Perbaiki styling pada komponen Tabel dan Search Tab agar sepenuhnya patuh terhadap sistem tema aplikasi.
-  - **Aturan Ketat:** Jangan pernah menggunakan *hardcoded colors* yang melawan tema (contoh: memaksa warna hitam pekat di light mode, atau putih terang di dark mode yang tidak sesuai dengan *guidelines*).
-  - Gunakan utilitas class dari Tailwind CSS atau Flux UI yang mendukung pergantian tema secara dinamis (misalnya `bg-white dark:bg-zinc-900`, `text-zinc-900 dark:text-zinc-100`).
-  - Lakukan pengecekan dan hapus class statis yang mencegah elemen-elemen ini beradaptasi dengan baik saat mode tema (gelap/terang) diubah.
+### Daftar Pekerjaan (Tasks)
+1. **Update CSS / Tema Global:**
+   - Sesuaikan konfigurasi warna variabel CSS pada `resources/css/app.css` (Tailwind v4) dengan palet medis di atas.
+   - Pastikan font utama pada stylesheet sudah mengakomodasi `Figtree` untuk heading dan `Noto Sans` untuk body text.
+2. **Modernisasi Dashboard:**
+   - Terapkan gaya kartu (card) yang lebih modern dengan *padding* dan *whitespace* yang cukup.
+   - Perbarui warna grafik ApexCharts pada dashboard agar selaras dengan palet medis (gunakan turunan warna biru/teal).
+   - Pastikan elemen interaktif memiliki umpan balik visual (hover effect) yang halus (transisi 150-300ms).
+3. **Penyempurnaan UI/UX:**
+   - Pastikan warna kontras aman di *Light Mode* dan *Dark Mode* (jangan memaksakan warna terang di mode gelap jika tidak nyaman dibaca).
+   - Pastikan semua elemen *clickable* memiliki `cursor-pointer`.
 
-## Catatan Eksekusi (Notes)
-- **Environment:** Proyek ini berjalan di atas Docker menggunakan **Laravel Sail**.
-- **Perintah CLI:** Setiap menjalankan perintah terminal yang berhubungan dengan Laravel (seperti membersihkan cache view, menjalankan migrasi, atau testing), Anda **WAJIB** menggunakan awalan `sail artisan`. Dilarang menggunakan `php artisan` secara langsung.
+## Catatan Penting
+- Proyek ini berjalan di atas Docker. **WAJIB** menggunakan perintah `sail artisan` (BUKAN `php artisan`).
+- Lakukan pengecekan tampilan menggunakan `sail artisan view:clear` jika terjadi caching.
+- Sebelum commit, jalankan `./vendor/bin/pint --format agent` untuk standarisasi kode sesuai konvensi proyek.
+- Fokus hanya pada perubahan User Interface (CSS, class Tailwind, warna grafik). Jangan mengubah logika bisnis, *query database*, atau relasi komponen.
+
+## Kriteria Selesai (Definition of Done)
+- Warna tema secara keseluruhan berubah menjadi nuansa medis yang bersih dan profesional.
+- Dashboard terlihat jauh lebih modern dengan tata letak yang rapi.
+- *Hover states* berfungsi baik tanpa merusak struktur layout.
+- Perubahan kompatibel dengan skema mode terang dan gelap.
