@@ -16,16 +16,18 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
+                    @can('viewAny', App\Models\Authorized::class)
                     <flux:sidebar.item icon="users" :href="route('authorized.index')" :current="request()->routeIs('authorized.index')" wire:navigate color="primary">
                         {{ __('Authorized') }}
                     </flux:sidebar.item>
+                    @endcan
 
                     <flux:sidebar.item icon="user-minus" :href="route('unauthorized.index')" :current="request()->routeIs('unauthorized.index')" wire:navigate color="primary">
                         {{ __('Unauthorized') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="clock" :href="route('registereds.index')" :current="request()->routeIs('registereds.index')" wire:navigate color="primary">
-                        {{ __('Scheduled Quota') }}
+                        {{ __('Registered') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
