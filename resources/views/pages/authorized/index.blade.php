@@ -54,6 +54,8 @@ new class extends Component
 
     public function with(): array
     {
+        Gate::authorize('viewAny', Authorized::class);
+
         return [
             'authorizeds' => Authorized::query()
                 ->with('user')
@@ -97,6 +99,9 @@ new class extends Component
     public function edit($id): void
     {
         $authorized = Authorized::with('user')->findOrFail($id);
+
+        Gate::authorize('update', $authorized);
+
         $this->editingAuthorizedId = $id;
         $this->editUuid = $authorized->uuid;
         $this->editGroup = $authorized->group;
@@ -123,6 +128,9 @@ new class extends Component
 
         try {
             $authorized = Authorized::findOrFail($this->editingAuthorizedId);
+
+            Gate::authorize('update', $authorized);
+
             $authorized->update([
                 'group' => $this->editGroup,
                 'quota' => $this->editQuota,
@@ -139,6 +147,9 @@ new class extends Component
     public function confirmDelete($id): void
     {
         $authorized = Authorized::findOrFail($id);
+
+        Gate::authorize('delete', $authorized);
+
         $this->deletingAuthorizedId = $id;
         $this->deleteUuid = $authorized->uuid;
         $this->showDeleteModal = true;
@@ -154,7 +165,11 @@ new class extends Component
     public function destroy(): void
     {
         try {
-            Authorized::findOrFail($this->deletingAuthorizedId)->delete();
+            $authorized = Authorized::findOrFail($this->deletingAuthorizedId);
+
+            Gate::authorize('delete', $authorized);
+
+            $authorized->delete();
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Authorized record deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
@@ -164,6 +179,8 @@ new class extends Component
 
     public function openAddModal(): void
     {
+        Gate::authorize('create', Authorized::class);
+
         $this->reset(['addUuid', 'addUserId', 'addUserSearch', 'addGroup', 'addQuota', 'addUuidSearch']);
         $this->addIsActive = true;
 
@@ -183,6 +200,8 @@ new class extends Component
 
     public function store(): void
     {
+        Gate::authorize('create', Authorized::class);
+
         $this->validate([
             'addUuid' => 'required|exists:catera.unauthorizeds,uuid|unique:catera.authorizeds,uuid',
             'addUserId' => 'required|integer|exists:portal_application.users,id',
@@ -224,9 +243,11 @@ new class extends Component
             <flux:heading size="xl" level="1">Authorized List</flux:heading>
             <flux:subheading size="lg">Manage UUID authorization data for access control.</flux:subheading>
         </div>
-        <div>
-            <flux:button wire:click="openAddModal" variant="primary" icon="plus">Add Authorized</flux:button>
-        </div>
+        @can('create', App\Models\Authorized::class)
+            <div>
+                <flux:button wire:click="openAddModal" variant="primary" icon="plus">Add Authorized</flux:button>
+            </div>
+        @endcan
     </div>
 
     {{-- Filters --}}
@@ -254,7 +275,9 @@ new class extends Component
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Group</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Quota</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
+                        @if(auth()->user()->hasAnyPermission(['catera:authorized:update', 'catera:authorized:delete']))
+                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -279,16 +302,26 @@ new class extends Component
                                     {{ $authorized->is_active ? 'Active' : 'Inactive' }}
                                 </flux:badge>
                             </td>
-                            <td class="px-4 py-3.5 text-center">
-                                <flux:dropdown>
-                                    <flux:button icon="ellipsis-horizontal" size="sm" variant="ghost" />
-                                    <flux:menu>
-                                        <flux:menu.item wire:click="edit({{ $authorized->id }})" icon="pencil">Edit</flux:menu.item>
-                                        <flux:menu.separator />
-                                        <flux:menu.item wire:click="confirmDelete({{ $authorized->id }})" icon="trash" variant="danger">Delete</flux:menu.item>
-                                    </flux:menu>
-                                </flux:dropdown>
-                            </td>
+                            @if(auth()->user()->can('update', $authorized) || auth()->user()->can('delete', $authorized))
+                                <td class="px-4 py-3.5 text-center">
+                                    <flux:dropdown>
+                                        <flux:button icon="ellipsis-horizontal" size="sm" variant="ghost" />
+                                        <flux:menu>
+                                            @can('update', $authorized)
+                                                <flux:menu.item wire:click="edit({{ $authorized->id }})" icon="pencil">Edit</flux:menu.item>
+                                            @endcan
+
+                                            @if(auth()->user()->can('update', $authorized) && auth()->user()->can('delete', $authorized))
+                                                <flux:menu.separator />
+                                            @endif
+
+                                            @can('delete', $authorized)
+                                                <flux:menu.item wire:click="confirmDelete({{ $authorized->id }})" icon="trash" variant="danger">Delete</flux:menu.item>
+                                            @endcan
+                                        </flux:menu>
+                                    </flux:dropdown>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>

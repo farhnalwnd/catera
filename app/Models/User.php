@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
+    use HasRoles;
+
     protected $table = 'portal_application.users';
 
     protected $fillable = [
