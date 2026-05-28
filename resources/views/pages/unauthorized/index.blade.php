@@ -97,9 +97,9 @@ new class extends Component {
                     <tr>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">UUID</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Detected At</th>
-                        @can('delete', App\Models\Unauthorized::class)
+                        @if (auth()->user()?->hasPermissionTo('catera:unauthorized:delete'))
                             <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
-                        @endcan
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
