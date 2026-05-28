@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->redirectGuestsTo(fn() => config('services.sso.portal_url'));
+        $middleware->redirectGuestsTo(fn () => config('services.sso.portal_url'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

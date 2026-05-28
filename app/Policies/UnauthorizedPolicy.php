@@ -20,7 +20,7 @@ class UnauthorizedPolicy
      */
     public function view(User $user, Unauthorized $unauthorized): bool
     {
-        return $user->hasPermissionTo('catera:unauthorized:view');
+        return false;
     }
 
     /**
@@ -28,7 +28,7 @@ class UnauthorizedPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('catera:unauthorized:create');
+        return false;
     }
 
     /**
@@ -36,7 +36,7 @@ class UnauthorizedPolicy
      */
     public function update(User $user, Unauthorized $unauthorized): bool
     {
-        return $user->hasPermissionTo('catera:unauthorized:update');
+        return false;
     }
 
     /**

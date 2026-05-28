@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Policies;
+
 use App\Models\Authorized;
 use App\Models\User;
 
@@ -19,7 +20,7 @@ class AuthorizedPolicy
      */
     public function view(User $user, Authorized $authorized): bool
     {
-        return $user->hasPermissionTo('catera:authorized:view');
+        return false;
     }
 
     /**

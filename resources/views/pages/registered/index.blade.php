@@ -2,6 +2,8 @@
 
 use App\Models\Authorized;
 use App\Models\Registered;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -56,6 +58,8 @@ new class extends Component
 
     public function with(): array
     {
+        Gate::authorize('viewAny', Registered::class);
+
         return [
             'registereds' => Registered::query()
                 ->with('authorized.user')
@@ -94,6 +98,9 @@ new class extends Component
     public function edit($id)
     {
         $registered = Registered::with('authorized.user')->findOrFail($id);
+
+        Gate::authorize('update', $registered);
+
         $this->editingRegisteredId = $id;
         $this->editAuthorizedUuid = $registered->authorized->uuid ?? '';
         $this->editAuthorizedName = trim(($registered->authorized->user->first_name ?? '').' '.($registered->authorized->user->last_name ?? ''));
@@ -119,6 +126,9 @@ new class extends Component
 
         try {
             $registered = Registered::findOrFail($this->editingRegisteredId);
+
+            Gate::authorize('update', $registered);
+
             $registered->update([
                 'add_quota' => $this->editAddQuota,
                 'target_date' => $this->editTargetDate,
@@ -127,6 +137,10 @@ new class extends Component
             $this->closeEditModal();
             $this->dispatch('notify', message: 'Scheduled quota updated successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to update scheduled quota', [
+                'error' => $e->getMessage(),
+                'registered_id' => $this->editingRegisteredId,
+            ]);
             $this->dispatch('notify', message: 'Failed to update scheduled quota. Please try again.', variant: 'danger');
         }
     }
@@ -134,6 +148,9 @@ new class extends Component
     public function confirmDelete($id)
     {
         $registered = Registered::with('authorized')->findOrFail($id);
+
+        Gate::authorize('delete', $registered);
+
         $this->deletingRegisteredId = $id;
         $this->deleteAuthorizedUuid = $registered->authorized->uuid ?? 'Unknown';
         $this->showDeleteModal = true;
@@ -149,16 +166,26 @@ new class extends Component
     public function destroy()
     {
         try {
-            Registered::findOrFail($this->deletingRegisteredId)->delete();
+            $registered = Registered::findOrFail($this->deletingRegisteredId);
+
+            Gate::authorize('delete', $registered);
+
+            $registered->delete();
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Scheduled quota removed successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to delete scheduled quota', [
+                'error' => $e->getMessage(),
+                'registered_id' => $this->deletingRegisteredId,
+            ]);
             $this->dispatch('notify', message: 'Failed to complete the action.', variant: 'danger');
         }
     }
 
     public function openAddModal()
     {
+        Gate::authorize('create', Registered::class);
+
         $this->reset(['addAuthorizedUuid', 'addAuthorizedUuidSearch']);
         $this->addAddQuota = 1;
         $this->addTargetDate = \Carbon\Carbon::today()->toDateString();
@@ -173,6 +200,8 @@ new class extends Component
 
     public function store()
     {
+        Gate::authorize('create', Registered::class);
+
         $this->validate([
             'addAuthorizedUuid' => ['required', 'string', 'exists:authorizeds,uuid'],
             'addAddQuota' => ['required', 'integer', 'min:1'],
@@ -180,12 +209,14 @@ new class extends Component
         ]);
 
         try {
-            Registered::create([
-                'authorized_uuid' => $this->addAuthorizedUuid,
-                'add_quota' => $this->addAddQuota,
-                'target_date' => $this->addTargetDate,
-                'status' => 'pending',
-            ]);
+            \Illuminate\Support\Facades\DB::transaction(function () {
+                Registered::create([
+                    'authorized_uuid' => $this->addAuthorizedUuid,
+                    'add_quota' => $this->addAddQuota,
+                    'target_date' => $this->addTargetDate,
+                    'status' => 'pending',
+                ]);
+            });
 
             $this->closeAddModal();
             $this->reset(['addAuthorizedUuid', 'addAuthorizedUuidSearch']);
@@ -193,6 +224,10 @@ new class extends Component
 
             $this->dispatch('notify', message: 'Scheduled quota setup successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to add scheduled quota', [
+                'error' => $e->getMessage(),
+                'uuid' => $this->addAuthorizedUuid,
+            ]);
             $this->dispatch('notify', message: 'Failed to add scheduled quota. Try again.', variant: 'danger');
         }
     }
@@ -209,7 +244,9 @@ new class extends Component
             <flux:subheading size="lg">Manage automated quota additions for selected authorized users.</flux:subheading>
         </div>
         <div>
-            <flux:button wire:click="openAddModal" variant="primary" icon="plus">Add Schedule</flux:button>
+            @can('create', App\Models\Registered::class)
+                <flux:button wire:click="openAddModal" variant="primary" icon="plus">Add Schedule</flux:button>
+            @endcan
         </div>
     </div>
 
@@ -245,7 +282,9 @@ new class extends Component
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Target Date</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Quota to Add</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Status</th>
-                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
+                        @if(auth()->user()->hasAnyPermission(['catera:quota_scheduling:update', 'catera:quota_scheduling:delete']))
+                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -270,18 +309,26 @@ new class extends Component
                                     {{ ucfirst($registered->status) }}
                                 </flux:badge>
                             </td>
+                            @if(auth()->user()->can('update', $registered) || auth()->user()->can('delete', $registered))
                             <td class="px-4 py-3.5 text-center">
                                 <flux:dropdown>
                                     <flux:button icon="ellipsis-horizontal" size="sm" variant="ghost" />
                                     <flux:menu>
                                         @if($registered->status === 'pending')
-                                            <flux:menu.item wire:click="edit({{ $registered->id }})" icon="pencil">Edit</flux:menu.item>
-                                            <flux:menu.separator />
+                                            @can('update', $registered)
+                                                <flux:menu.item wire:click="edit({{ $registered->id }})" icon="pencil">Edit</flux:menu.item>
+                                            @endcan
                                         @endif
-                                        <flux:menu.item wire:click="confirmDelete({{ $registered->id }})" icon="trash" variant="danger">Remove</flux:menu.item>
+                                        @can('delete', $registered)
+                                            @if($registered->status === 'pending')
+                                                <flux:menu.separator />
+                                            @endif
+                                            <flux:menu.item wire:click="confirmDelete({{ $registered->id }})" icon="trash" variant="danger">Remove</flux:menu.item>
+                                        @endcan
                                     </flux:menu>
                                 </flux:dropdown>
                             </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>

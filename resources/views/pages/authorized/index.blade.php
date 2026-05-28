@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Authorized;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -140,6 +142,10 @@ new class extends Component
             $this->closeEditModal();
             $this->dispatch('notify', message: 'Authorized record updated successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to update authorized record', [
+                'error' => $e->getMessage(),
+                'authorized_id' => $this->editingAuthorizedId,
+            ]);
             $this->dispatch('notify', message: 'Failed to update authorized record. Please try again.', variant: 'danger');
         }
     }
@@ -173,6 +179,10 @@ new class extends Component
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Authorized record deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to delete authorized record', [
+                'error' => $e->getMessage(),
+                'authorized_id' => $this->deletingAuthorizedId,
+            ]);
             $this->dispatch('notify', message: 'Failed to delete authorized record.', variant: 'danger');
         }
     }
@@ -228,6 +238,10 @@ new class extends Component
             $this->addIsActive = true;
             $this->dispatch('notify', message: 'Authorized record created successfully.', variant: 'success');
         } catch (\Exception $e) {
+            Log::error('Failed to create authorized record', [
+                'error' => $e->getMessage(),
+                'uuid' => $this->addUuid,
+            ]);
             $this->dispatch('notify', message: 'Failed to create authorized record. Try again.', variant: 'danger');
         }
     }

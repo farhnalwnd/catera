@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Registered::class, RegisteredPolicy::class);
 
         Gate::define('viewPulse', function (User $user) {
-            return $user->email === config('app.pulse_admin_email', env('PULSE_ADMIN_EMAIL'));
+            return $user->email === config('app.pulse_admin_email');
         });
     }
 
