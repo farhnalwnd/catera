@@ -282,7 +282,7 @@ new class extends Component
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Target Date</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Quota to Add</th>
                         <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Status</th>
-                        @if(auth()->user()->can('update', App\Models\Registered::class) || auth()->user()->can('delete', App\Models\Registered::class))
+                        @if(auth()->user()->hasAnyPermission(['catera:quota_scheduling:update', 'catera:quota_scheduling:delete']))
                             <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Actions</th>
                         @endif
                     </tr>
