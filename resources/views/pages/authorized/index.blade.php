@@ -80,7 +80,7 @@ new class extends Component
                 ->take(8)
                 ->get(),
 
-            'portalUsers' => DB::table('portal_application.users')
+            'portalUsers' => DB::table('portal_application.md_users')
                 ->when($this->addUserSearch, function ($q) {
                     $q->where(function ($inner) {
                         $inner->whereRaw("LOWER(first_name || ' ' || last_name) LIKE ?", [strtolower("{$this->addUserSearch}%")])
@@ -203,8 +203,8 @@ new class extends Component
         Gate::authorize('create', Authorized::class);
 
         $this->validate([
-            'addUuid' => 'required|exists:catera.unauthorizeds,uuid|unique:catera.authorizeds,uuid',
-            'addUserId' => 'required|integer|exists:portal_application.users,id',
+            'addUuid' => 'required|exists:unauthorizeds,uuid|unique:authorizeds,uuid',
+            'addUserId' => 'required|integer|exists:md_users,id',
             'addGroup' => 'required|in:merah,biru',
             'addQuota' => 'required|numeric',
             'addIsActive' => 'boolean',

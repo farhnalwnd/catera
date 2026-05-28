@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Authorized;
+use App\Models\Registered;
+use App\Models\Unauthorized;
 use App\Models\User;
+use App\Policies\AuthorizedPolicy;
+use App\Policies\RegisteredPolicy;
+use App\Policies\UnauthorizedPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Date;
@@ -28,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         Paginator::useTailwind();
+
+        Gate::policy(Authorized::class, AuthorizedPolicy::class);
+        Gate::policy(Unauthorized::class, UnauthorizedPolicy::class);
+        Gate::policy(Registered::class, RegisteredPolicy::class);
 
         Gate::define('viewPulse', function (User $user) {
             return $user->email === config('app.pulse_admin_email', env('PULSE_ADMIN_EMAIL'));
