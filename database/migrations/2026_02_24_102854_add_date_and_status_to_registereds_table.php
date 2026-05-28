@@ -27,6 +27,9 @@ return new class extends Migration
     {
         Schema::table('catera.registereds', function (Blueprint $table) {
             $table->dropColumn(['target_date', 'status']);
+            $table->dropIndex(['authorized_uuid']);
+            $table->dropIndex(['status']);
+            $table->dropIndex(['target_date']);
         });
     }
 };

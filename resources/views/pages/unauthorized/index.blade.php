@@ -58,7 +58,7 @@ new class extends Component {
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Unauthorized record deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to delete unauthorized record', [
+            Log::error('Failed to delete unauthorized record', [
                 'error' => $e->getMessage(),
                 'unauthorized_id' => $this->deletingUnauthorizedId,
             ]);

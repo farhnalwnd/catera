@@ -137,7 +137,7 @@ new class extends Component
             $this->closeEditModal();
             $this->dispatch('notify', message: 'Scheduled quota updated successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to update scheduled quota', [
+            Log::error('Failed to update scheduled quota', [
                 'error' => $e->getMessage(),
                 'registered_id' => $this->editingRegisteredId,
             ]);
@@ -174,7 +174,7 @@ new class extends Component
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Scheduled quota removed successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to delete scheduled quota', [
+            Log::error('Failed to delete scheduled quota', [
                 'error' => $e->getMessage(),
                 'registered_id' => $this->deletingRegisteredId,
             ]);
@@ -224,7 +224,7 @@ new class extends Component
 
             $this->dispatch('notify', message: 'Scheduled quota setup successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to add scheduled quota', [
+            Log::error('Failed to add scheduled quota', [
                 'error' => $e->getMessage(),
                 'uuid' => $this->addAuthorizedUuid,
             ]);

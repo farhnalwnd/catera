@@ -142,7 +142,7 @@ new class extends Component
             $this->closeEditModal();
             $this->dispatch('notify', message: 'Authorized record updated successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to update authorized record', [
+            Log::error('Failed to update authorized record', [
                 'error' => $e->getMessage(),
                 'authorized_id' => $this->editingAuthorizedId,
             ]);
@@ -179,7 +179,7 @@ new class extends Component
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Authorized record deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to delete authorized record', [
+            Log::error('Failed to delete authorized record', [
                 'error' => $e->getMessage(),
                 'authorized_id' => $this->deletingAuthorizedId,
             ]);
@@ -238,7 +238,7 @@ new class extends Component
             $this->addIsActive = true;
             $this->dispatch('notify', message: 'Authorized record created successfully.', variant: 'success');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to create authorized record', [
+            Log::error('Failed to create authorized record', [
                 'error' => $e->getMessage(),
                 'uuid' => $this->addUuid,
             ]);
