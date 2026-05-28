@@ -16,7 +16,7 @@ new class extends Component {
             ->orderBy('date', 'asc')
             ->get()
             ->map(fn ($item) => [
-                'x' => $item->date,
+                'x' => strtotime($item->date) * 1000,
                 'y' => (int) $item->total,
             ])
             ->toArray();
@@ -75,7 +75,7 @@ new class extends Component {
             },
             series: [this.stats.merah_count, this.stats.biru_count],
             labels: ['Merah', 'Biru'],
-            colors: ['#ef4444', '#3b82f6'],
+            colors: ['#3f8f81', '#4da8cf'],
             legend: { position: 'bottom', fontSize: '14px' },
             dataLabels: { enabled: true, dropShadow: { enabled: false } },
             plotOptions: {
@@ -116,7 +116,7 @@ new class extends Component {
                     dataLabels: { position: 'top' }
                 }
             },
-            colors: ['#0891B2', '#94A3B8'],
+            colors: ['#4da8cf', '#5b5856'],
             xaxis: {
                 categories: ['Active', 'Inactive'],
                 axisBorder: { show: false },
@@ -127,7 +127,7 @@ new class extends Component {
             dataLabels: {
                 enabled: true,
                 offsetY: -20,
-                style: { fontSize: '12px', colors: ['#134E4A'] }
+                style: { fontSize: '12px', colors: ['#5b5856'] }
             }
         }).render();
 
@@ -149,7 +149,7 @@ new class extends Component {
                 labels: { datetimeUTC: false }
             },
             yaxis: { title: { text: 'Quota' } },
-            colors: ['#0891B2'],
+            colors: ['#3f8f81'],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
@@ -173,18 +173,17 @@ new class extends Component {
         </div>
     </div>
 
-    {{-- Stats Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                <div class="p-2 rounded-lg bg-[#3f8f81]/10 text-[#3f8f81] group-hover:bg-[#3f8f81] group-hover:text-white transition-colors">
                     <flux:icon name="users" variant="mini" />
                 </div>
                 <flux:text size="sm" font="medium">Total Authorized</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-primary transition-colors">{{ number_format($stats['total_authorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-green-500 font-semibold bg-green-500/10 px-2 py-0.5 rounded-full">Verified</flux:text>
+                <flux:heading size="xl" class="group-hover:text-[#3f8f81] transition-colors">{{ number_format($stats['total_authorized']) }}</flux:heading>
+                <flux:text size="xs" class="text-[#3f8f81] font-semibold bg-[#3f8f81]/10 px-2 py-0.5 rounded-full">Verified</flux:text>
             </div>
             <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="users" size="xl" class="size-32" />
@@ -193,14 +192,14 @@ new class extends Component {
 
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <div class="p-2 rounded-lg bg-[#5b5856]/10 text-[#5b5856] group-hover:bg-[#5b5856] group-hover:text-white transition-colors">
                     <flux:icon name="exclamation-triangle" variant="mini" />
                 </div>
                 <flux:text size="sm" font="medium">Unauthorized Attempts</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-red-500 transition-colors">{{ number_format($stats['total_unauthorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-red-500 font-semibold bg-red-500/10 px-2 py-0.5 rounded-full">Blocked</flux:text>
+                <flux:heading size="xl" class="group-hover:text-[#5b5856] transition-colors">{{ number_format($stats['total_unauthorized']) }}</flux:heading>
+                <flux:text size="xs" class="text-[#5b5856] font-semibold bg-[#5b5856]/10 px-2 py-0.5 rounded-full">Blocked</flux:text>
             </div>
              <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="exclamation-triangle" size="xl" class="size-32" />
@@ -209,14 +208,14 @@ new class extends Component {
 
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-cta/10 text-cta group-hover:bg-cta group-hover:text-white transition-colors">
+                <div class="p-2 rounded-lg bg-[#4da8cf]/10 text-[#4da8cf] group-hover:bg-[#4da8cf] group-hover:text-white transition-colors">
                     <flux:icon name="bolt" variant="mini" />
                 </div>
                 <flux:text size="sm" font="medium">Quota Distributed</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-cta transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
-                <flux:text size="xs" class="text-blue-500 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">Units</flux:text>
+                <flux:heading size="xl" class="group-hover:text-[#4da8cf] transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
+                <flux:text size="xs" class="text-[#4da8cf] font-semibold bg-[#4da8cf]/10 px-2 py-0.5 rounded-full">Units</flux:text>
             </div>
              <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="bolt" size="xl" class="size-32" />

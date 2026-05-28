@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('catera.authorizeds', function (Blueprint $table) {
             $table->id();
             $table->string('uuid')->index()->unique();
-            $table->foreignId('user_id')->constrained('portal_application.users')->index();
+            $table->foreignId('user_id')->constrained('portal_application.md_users')->index();
             $table->string('group')->index();
             $table->integer('quota');
             $table->boolean('is_active')->default(true);

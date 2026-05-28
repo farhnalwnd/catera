@@ -11,7 +11,7 @@ class AuthorizedPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('catera:authorized:viewAny');
+        return $user->hasPermissionTo('catera:authorized:view_any');
     }
 
     /**
