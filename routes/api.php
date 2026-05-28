@@ -18,12 +18,12 @@ Route::post('/webhook/clear-permission-cache', function (Request $request) {
 
     return response()->json([
         'status' => 'success',
-        'message' => 'Cache permission berhasil dibersihkan.'
+        'message' => 'Cache permission berhasil dibersihkan.',
     ]);
 });
 
 Route::get('/test', function () {
     return response()->json([
-        'message' => 'Connection successful'
+        'message' => 'Connection successful',
     ]);
 });

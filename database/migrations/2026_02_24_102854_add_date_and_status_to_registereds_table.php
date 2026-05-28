@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::table('catera.registereds', function (Blueprint $table) {
             $table->date('target_date')->after('add_quota')->nullable();
             $table->string('status')->after('target_date')->default('pending');
+            $table->index('authorized_uuid');
+            $table->index('status');
+            $table->index('target_date');
         });
     }
 

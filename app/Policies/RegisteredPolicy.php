@@ -20,7 +20,7 @@ class RegisteredPolicy
      */
     public function view(User $user, Registered $registered): bool
     {
-        return $user->hasPermissionTo('catera:quota_scheduling:view');
+        return false;
     }
 
     /**
