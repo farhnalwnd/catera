@@ -28,7 +28,7 @@ class ScheduleAddQuota extends Command
     {
         $this->info('Start processing scheduled add quota for selected user');
 
-        $registereds = DB::table('registereds')
+        $registereds = DB::table('quota_schedules')
             ->where('status', 'pending')
             ->whereNotNull('target_date')
             ->where('target_date', '<=', \Carbon\Carbon::today()->toDateString())
@@ -42,7 +42,7 @@ class ScheduleAddQuota extends Command
                         ->where('uuid', $registered->authorized_uuid)
                         ->increment('quota', $addQuota);
 
-                    DB::table('registereds')
+                    DB::table('quota_schedules')
                         ->where('id', $registered->id)
                         ->update([
                             'status' => 'success',

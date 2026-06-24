@@ -43,11 +43,11 @@ class Authorized extends Model
     }
 
     /**
-     * Get the registered record associated with the authorized.
+     * Get the quota schedule record associated with the authorized.
      */
-    public function registered(): HasOne
+    public function quotaSchedule(): HasOne
     {
-        return $this->hasOne(Registered::class, 'authorized_uuid', 'uuid');
+        return $this->hasOne(QuotaSchedule::class, 'authorized_uuid', 'uuid');
     }
 
     // public static function getGloballySearchableAttributes(): array

@@ -1,15 +1,14 @@
 <?php
 
 use App\Models\Authorized;
-use App\Models\Unauthorized;
-use App\Models\Registered;
+use App\Models\QuotaSchedule;
 use Livewire\Component;
 
 new class extends Component {
     public function with(): array
     {
         // Get trend data for the last 30 days
-        $trends = Registered::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
+        $trends = QuotaSchedule::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
             ->whereNotNull('target_date')
             ->where('target_date', '>=', now()->subDays(30)->toDateString())
             ->groupBy('date')
@@ -36,8 +35,7 @@ new class extends Component {
         return [
             'stats' => [
                 'total_authorized' => (int) $authorizedStats->total,
-                'total_unauthorized' => Unauthorized::count(),
-                'total_quota' => (int) Registered::sum('add_quota'),
+                'total_quota' => (int) QuotaSchedule::sum('add_quota'),
                 'active_count' => (int) $authorizedStats->active_count,
                 'inactive_count' => (int) $authorizedStats->inactive_count,
                 'merah_count' => (int) $authorizedStats->merah_count,
@@ -190,7 +188,7 @@ new class extends Component {
             </div>
         </flux:card>
 
-        <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+        {{-- <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
                 <div class="p-2 rounded-lg bg-[#5b5856]/10 text-[#5b5856] group-hover:bg-[#5b5856] group-hover:text-white transition-colors">
                     <flux:icon name="exclamation-triangle" variant="mini" />
@@ -204,7 +202,7 @@ new class extends Component {
              <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="exclamation-triangle" size="xl" class="size-32" />
             </div>
-        </flux:card>
+        </flux:card> --}}
 
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">

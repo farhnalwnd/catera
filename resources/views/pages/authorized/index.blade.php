@@ -75,13 +75,6 @@ new class extends Component
                 ->when($this->activeOnly, fn ($query) => $query->where('is_active', true))
                 ->paginate(10),
 
-            'unauthorizeds' => \App\Models\Unauthorized::when($this->addUuidSearch, function ($query) {
-                return $query->where('uuid', 'ilike', "{$this->addUuidSearch}%");
-            })
-                ->orderBy('created_at', 'desc')
-                ->take(8)
-                ->get(),
-
             'portalUsers' => DB::table('portal_application.md_users')
                 ->when($this->addUserSearch, function ($q) {
                     $q->where(function ($inner) {
@@ -194,11 +187,6 @@ new class extends Component
         $this->reset(['addUuid', 'addUserId', 'addUserSearch', 'addGroup', 'addQuota', 'addUuidSearch']);
         $this->addIsActive = true;
 
-        $unauthorized = \App\Models\Unauthorized::orderBy('created_at', 'desc')->first();
-        if ($unauthorized) {
-            $this->addUuid = $unauthorized->uuid;
-        }
-
         $this->showAddModal = true;
     }
 
@@ -208,12 +196,13 @@ new class extends Component
         $this->reset(['addUuidSearch', 'addUserSearch', 'addUserId']);
     }
 
+
     public function store(): void
     {
         Gate::authorize('create', Authorized::class);
 
         $this->validate([
-            'addUuid' => 'required|exists:unauthorizeds,uuid|unique:authorizeds,uuid',
+            'addUuid' => 'required|unique:authorizeds,uuid',
             'addUserId' => 'required|integer|exists:md_users,id',
             'addGroup' => 'required|in:merah,biru',
             'addQuota' => 'required|numeric',
@@ -229,12 +218,10 @@ new class extends Component
                     'quota' => $this->addQuota,
                     'is_active' => $this->addIsActive,
                 ]);
-
-                \App\Models\Unauthorized::where('uuid', $this->addUuid)->delete();
             });
 
             $this->closeAddModal();
-            $this->reset(['addUuid', 'addUserId', 'addUserSearch', 'addGroup', 'addQuota', 'addUuidSearch']);
+            $this->reset(['addUuid', 'addUserId', 'addUserSearch', 'addGroup', 'addQuota']);
             $this->addIsActive = true;
             $this->dispatch('notify', message: 'Authorized record created successfully.', variant: 'success');
         } catch (\Exception $e) {
@@ -423,15 +410,11 @@ new class extends Component
                 <flux:subheading>Authorize a new UUID and link it to a portal user.</flux:subheading>
             </div>
 
-            @php
-                $unauthOptions = $unauthorizeds->map(fn($u) => ['id' => $u->uuid, 'name' => $u->uuid])->toArray();
-            @endphp
-            <x-ui.searchable-select
+            <flux:input
+                wire:model="addUuid"
                 label="UUID"
-                placeholder="Search unauthorized UUID..."
-                wireModel="addUuid"
-                searchWireModel="addUuidSearch"
-                :options="$unauthOptions"
+                placeholder="Tap RFID card to auto-fill..."
+                id="addUuid"
             />
 
             <x-ui.searchable-select

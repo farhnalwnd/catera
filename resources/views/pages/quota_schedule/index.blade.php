@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Authorized;
-use App\Models\Registered;
+use App\Models\QuotaSchedule;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -17,7 +17,7 @@ new class extends Component
 
     public bool $showEditModal = false;
 
-    public $editingRegisteredId = null;
+    public $editingQuotaScheduleId = null;
 
     public string $editAuthorizedUuid = '';
 
@@ -33,7 +33,7 @@ new class extends Component
 
     public bool $showDeleteModal = false;
 
-    public $deletingRegisteredId = null;
+    public $deletingQuotaScheduleId = null;
 
     public string $deleteAuthorizedUuid = '';
 
@@ -58,10 +58,10 @@ new class extends Component
 
     public function with(): array
     {
-        Gate::authorize('viewAny', Registered::class);
+        Gate::authorize('viewAny', QuotaSchedule::class);
 
         return [
-            'registereds' => Registered::query()
+            'quotaSchedules' => QuotaSchedule::query()
                 ->with('authorized.user')
                 ->where('status', $this->currentTab)
                 ->when($this->search, function ($query) {
@@ -97,16 +97,16 @@ new class extends Component
 
     public function edit($id)
     {
-        $registered = Registered::with('authorized.user')->findOrFail($id);
+        $quotaSchedule = QuotaSchedule::with('authorized.user')->findOrFail($id);
 
-        Gate::authorize('update', $registered);
+        Gate::authorize('update', $quotaSchedule);
 
-        $this->editingRegisteredId = $id;
-        $this->editAuthorizedUuid = $registered->authorized->uuid ?? '';
-        $this->editAuthorizedName = trim(($registered->authorized->user->first_name ?? '').' '.($registered->authorized->user->last_name ?? ''));
-        $this->editAddQuota = $registered->add_quota;
-        $this->editTargetDate = $registered->target_date ? $registered->target_date->toDateString() : '';
-        $this->editStatus = $registered->status;
+        $this->editingQuotaScheduleId = $id;
+        $this->editAuthorizedUuid = $quotaSchedule->authorized->uuid ?? '';
+        $this->editAuthorizedName = trim(($quotaSchedule->authorized->user->first_name ?? '').' '.($quotaSchedule->authorized->user->last_name ?? ''));
+        $this->editAddQuota = $quotaSchedule->add_quota;
+        $this->editTargetDate = $quotaSchedule->target_date ? $quotaSchedule->target_date->toDateString() : '';
+        $this->editStatus = $quotaSchedule->status;
 
         $this->showEditModal = true;
     }
@@ -114,7 +114,7 @@ new class extends Component
     public function closeEditModal()
     {
         $this->showEditModal = false;
-        $this->editingRegisteredId = null;
+        $this->editingQuotaScheduleId = null;
     }
 
     public function update()
@@ -125,11 +125,11 @@ new class extends Component
         ]);
 
         try {
-            $registered = Registered::findOrFail($this->editingRegisteredId);
+            $quotaSchedule = QuotaSchedule::findOrFail($this->editingQuotaScheduleId);
 
-            Gate::authorize('update', $registered);
+            Gate::authorize('update', $quotaSchedule);
 
-            $registered->update([
+            $quotaSchedule->update([
                 'add_quota' => $this->editAddQuota,
                 'target_date' => $this->editTargetDate,
             ]);
@@ -139,7 +139,7 @@ new class extends Component
         } catch (\Exception $e) {
             Log::error('Failed to update scheduled quota', [
                 'error' => $e->getMessage(),
-                'registered_id' => $this->editingRegisteredId,
+                'registered_id' => $this->editingQuotaScheduleId,
             ]);
             $this->dispatch('notify', message: 'Failed to update scheduled quota. Please try again.', variant: 'danger');
         }
@@ -147,36 +147,36 @@ new class extends Component
 
     public function confirmDelete($id)
     {
-        $registered = Registered::with('authorized')->findOrFail($id);
+        $quotaSchedule = QuotaSchedule::with('authorized')->findOrFail($id);
 
-        Gate::authorize('delete', $registered);
+        Gate::authorize('delete', $quotaSchedule);
 
-        $this->deletingRegisteredId = $id;
-        $this->deleteAuthorizedUuid = $registered->authorized->uuid ?? 'Unknown';
+        $this->deletingQuotaScheduleId = $id;
+        $this->deleteAuthorizedUuid = $quotaSchedule->authorized->uuid ?? 'Unknown';
         $this->showDeleteModal = true;
     }
 
     public function closeDeleteModal()
     {
         $this->showDeleteModal = false;
-        $this->deletingRegisteredId = null;
+        $this->deletingQuotaScheduleId = null;
         $this->deleteAuthorizedUuid = '';
     }
 
     public function destroy()
     {
         try {
-            $registered = Registered::findOrFail($this->deletingRegisteredId);
+            $quotaSchedule = QuotaSchedule::findOrFail($this->deletingQuotaScheduleId);
 
-            Gate::authorize('delete', $registered);
+            Gate::authorize('delete', $quotaSchedule);
 
-            $registered->delete();
+            $quotaSchedule->delete();
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Scheduled quota removed successfully.', variant: 'success');
         } catch (\Exception $e) {
             Log::error('Failed to delete scheduled quota', [
                 'error' => $e->getMessage(),
-                'registered_id' => $this->deletingRegisteredId,
+                'registered_id' => $this->deletingQuotaScheduleId,
             ]);
             $this->dispatch('notify', message: 'Failed to complete the action.', variant: 'danger');
         }
@@ -184,7 +184,7 @@ new class extends Component
 
     public function openAddModal()
     {
-        Gate::authorize('create', Registered::class);
+        Gate::authorize('create', QuotaSchedule::class);
 
         $this->reset(['addAuthorizedUuid', 'addAuthorizedUuidSearch']);
         $this->addAddQuota = 1;
@@ -200,7 +200,7 @@ new class extends Component
 
     public function store()
     {
-        Gate::authorize('create', Registered::class);
+        Gate::authorize('create', QuotaSchedule::class);
 
         $this->validate([
             'addAuthorizedUuid' => ['required', 'string', 'exists:authorizeds,uuid'],
@@ -210,7 +210,7 @@ new class extends Component
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () {
-                Registered::create([
+                QuotaSchedule::create([
                     'authorized_uuid' => $this->addAuthorizedUuid,
                     'add_quota' => $this->addAddQuota,
                     'target_date' => $this->addTargetDate,
@@ -233,7 +233,7 @@ new class extends Component
     }
 }; ?>
 
-<x-slot name="title">Scheduled Quota (Registered)</x-slot>
+<x-slot name="title">Quota Schedules</x-slot>
 
 <div class="flex h-full w-full flex-1 flex-col gap-6">
 
@@ -244,7 +244,7 @@ new class extends Component
             <flux:subheading size="lg">Manage automated quota additions for selected authorized users.</flux:subheading>
         </div>
         <div>
-            @can('create', App\Models\Registered::class)
+            @can('create', App\Models\QuotaSchedule::class)
                 <flux:button wire:click="openAddModal" variant="primary" icon="plus">Add Schedule</flux:button>
             @endcan
         </div>
@@ -288,42 +288,42 @@ new class extends Component
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    @forelse ($registereds as $registered)
-                        <tr class="transition-colors duration-150 hover:bg-hover/20 dark:hover:bg-hover/30" wire:key="registered-{{ $registered->id }}">
+                    @forelse ($quotaSchedules as $quotaSchedule)
+                        <tr class="transition-colors duration-150 hover:bg-hover/20 dark:hover:bg-hover/30" wire:key="quota-schedule-{{ $quotaSchedule->id }}">
                             <td class="px-4 py-3.5 text-center">
-                                <span class="font-mono text-xs text-zinc-600 dark:text-zinc-400">{{ $registered->authorized->uuid ?? 'N/A' }}</span>
+                                <span class="font-mono text-xs text-zinc-600 dark:text-zinc-400">{{ $quotaSchedule->authorized->uuid ?? 'N/A' }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-center">
                                 <span class="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                                    {{ $registered->authorized->user->first_name ?? '' }} {{ $registered->authorized->user->last_name ?? '' }}
+                                    {{ $quotaSchedule->authorized->user->first_name ?? '' }} {{ $quotaSchedule->authorized->user->last_name ?? '' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3.5 text-center">
-                                <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $registered->target_date ? $registered->target_date->format('d M Y') : 'N/A' }}</span>
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $quotaSchedule->target_date ? $quotaSchedule->target_date->format('d M Y') : 'N/A' }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-center">
-                                <span class="text-sm font-bold text-green-600 dark:text-green-400">+{{ $registered->add_quota }}</span>
+                                <span class="text-sm font-bold text-green-600 dark:text-green-400">+{{ $quotaSchedule->add_quota }}</span>
                             </td>
                             <td class="px-4 py-3.5 text-center">
-                                <flux:badge size="sm" :color="$registered->status === 'success' ? 'green' : 'yellow'" inset="top bottom" class="w-24 justify-center" :icon="$registered->status === 'success' ? 'check-circle' : 'clock'">
-                                    {{ ucfirst($registered->status) }}
+                                <flux:badge size="sm" :color="$quotaSchedule->status === 'success' ? 'green' : 'yellow'" inset="top bottom" class="w-24 justify-center" :icon="$quotaSchedule->status === 'success' ? 'check-circle' : 'clock'">
+                                    {{ ucfirst($quotaSchedule->status) }}
                                 </flux:badge>
                             </td>
-                            @if(auth()->user()->can('update', $registered) || auth()->user()->can('delete', $registered))
+                            @if(auth()->user()->can('update', $quotaSchedule) || auth()->user()->can('delete', $quotaSchedule))
                             <td class="px-4 py-3.5 text-center">
                                 <flux:dropdown>
                                     <flux:button icon="ellipsis-horizontal" size="sm" variant="ghost" />
                                     <flux:menu>
-                                        @if($registered->status === 'pending')
-                                            @can('update', $registered)
-                                                <flux:menu.item wire:click="edit({{ $registered->id }})" icon="pencil">Edit</flux:menu.item>
+                                        @if($quotaSchedule->status === 'pending')
+                                            @can('update', $quotaSchedule)
+                                                <flux:menu.item wire:click="edit({{ $quotaSchedule->id }})" icon="pencil">Edit</flux:menu.item>
                                             @endcan
                                         @endif
-                                        @can('delete', $registered)
-                                            @if($registered->status === 'pending')
+                                        @can('delete', $quotaSchedule)
+                                            @if($quotaSchedule->status === 'pending')
                                                 <flux:menu.separator />
                                             @endif
-                                            <flux:menu.item wire:click="confirmDelete({{ $registered->id }})" icon="trash" variant="danger">Remove</flux:menu.item>
+                                            <flux:menu.item wire:click="confirmDelete({{ $quotaSchedule->id }})" icon="trash" variant="danger">Remove</flux:menu.item>
                                         @endcan
                                     </flux:menu>
                                 </flux:dropdown>
@@ -341,15 +341,15 @@ new class extends Component
             </table>
         </div>
 
-        @if ($registereds->hasPages())
+        @if ($quotaSchedules->hasPages())
             <div class="border-t border-zinc-100 px-4 py-3 dark:border-zinc-800">
-                {{ $registereds->links('vendor.pagination.bordered-case') }}
+                {{ $quotaSchedules->links('vendor.pagination.bordered-case') }}
             </div>
         @endif
     </div>
 
     {{-- Edit Modal --}}
-    <flux:modal name="edit-registered" wire:model.live="showEditModal" variant="floating" class="md:w-120">
+    <flux:modal name="edit-quota-schedule" wire:model.live="showEditModal" variant="floating" class="md:w-120">
         <div class="space-y-5">
             <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800">
                 <flux:heading size="lg">Edit Scheduled Quota</flux:heading>
@@ -390,7 +390,7 @@ new class extends Component
     </flux:modal>
 
     {{-- Add Modal --}}
-    <flux:modal name="add-registered" wire:model.live="showAddModal" variant="floating" class="md:w-120">
+    <flux:modal name="add-quota-schedule" wire:model.live="showAddModal" variant="floating" class="md:w-120">
         <form wire:submit="store" class="space-y-5">
             <div class="border-b border-zinc-100 pb-4 dark:border-zinc-800">
                 <flux:heading size="lg">Create Quota Schedule</flux:heading>
@@ -431,7 +431,7 @@ new class extends Component
     </flux:modal>
 
     {{-- Delete Confirmation Modal --}}
-    <flux:modal name="delete-registered" wire:model.live="showDeleteModal" class="md:w-md">
+    <flux:modal name="delete-quota-schedule" wire:model.live="showDeleteModal" class="md:w-md">
         <div class="space-y-5">
             <div class="flex items-start gap-4">
                 <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">

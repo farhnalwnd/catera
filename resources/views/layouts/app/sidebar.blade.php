@@ -40,14 +40,13 @@
 
             <!-- Navigation -->
             <div class="flex-1 py-6 overflow-y-auto px-4 space-y-2">
-                @php
-                    $links = [
-                        ['route' => 'dashboard', 'icon' => 'home', 'label' => 'Dashboard'],
-                        ['route' => 'authorized.index', 'icon' => 'users', 'label' => 'Authorized', 'can' => 'catera:authorized:view_any'],
-                        ['route' => 'unauthorized.index', 'icon' => 'user-minus', 'label' => 'Unauthorized', 'can' => 'catera:unauthorized:view_any'],
-                        ['route' => 'registereds.index', 'icon' => 'clock', 'label' => 'Registered', 'can' => 'catera:quota_scheduling:view_any'],
-                    ];
-                @endphp
+                    @php
+                        $links = [
+                            ['route' => 'dashboard', 'icon' => 'home', 'label' => 'Dashboard'],
+                            ['route' => 'authorized.index', 'icon' => 'users', 'label' => 'Authorized', 'can' => 'catera:authorized:view_any'],
+                            ['route' => 'quota_schedules.index', 'icon' => 'clock', 'label' => 'Quota Schedules', 'can' => 'catera:quota_scheduling:view_any'],
+                        ];
+                    @endphp
 
                 @foreach($links as $link)
                     @if(!isset($link['can']) || auth()->user()->can($link['can']))
