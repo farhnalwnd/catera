@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('access_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('authorizeds_id')->constrained('catera.authorizeds')->index();
+            $table->foreignId('authorizeds_id')->nullable()->constrained('catera.authorizeds')->onDelete('set null')->index();
             $table->string('uuid')->index();
             $table->string('group')->index();
             $table->string('status')->index();
