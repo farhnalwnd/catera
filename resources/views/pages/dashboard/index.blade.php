@@ -6,12 +6,24 @@ use App\Models\AccessLog;
 use Livewire\Component;
 
 new class extends Component {
+    public string $startDate = '';
+    public string $endDate = '';
+    public array $stats = [];
+    public array $trends = [];
+
+    public function mount(): void
+    {
+        $this->startDate = now()->subMonth()->toDateString();
+        $this->endDate = now()->addMonth()->toDateString();
+    }
+
     public function with(): array
     {
-        // Get trend data for the last 30 days
-        $trends = QuotaSchedule::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
+        // Get trend data filtered by date range
+        $this->trends = QuotaSchedule::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
             ->whereNotNull('target_date')
-            ->where('target_date', '>=', now()->subDays(30)->toDateString())
+            ->when($this->startDate, fn ($query) => $query->where('target_date', '>=', $this->startDate))
+            ->when($this->endDate, fn ($query) => $query->where('target_date', '<=', $this->endDate))
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get()
@@ -21,7 +33,7 @@ new class extends Component {
             ])
             ->toArray();
 
-        // Single aggregated query instead of 5 separate COUNT queries
+        // Single aggregated query for authorized stats
         $authorizedStats = Authorized::query()
             ->selectRaw(
                 'COUNT(*) as total,
@@ -33,29 +45,47 @@ new class extends Component {
             )
             ->first();
 
-        // Get access log stats
-        $accessLogStats = AccessLog::query()
+        // Get access log stats for today only
+        $accessLogTodayStats = AccessLog::query()
+            ->whereDate('scanned_at', now()->toDateString())
             ->selectRaw(
                 'COUNT(*) as total,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as success_count,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed_count',
-                ['success', 'failed']
+                SUM(CASE WHEN status = \'authorized\' THEN 1 ELSE 0 END) as success_count,
+                SUM(CASE WHEN status != \'authorized\' THEN 1 ELSE 0 END) as failed_count'
             )
             ->first();
 
+        // Get category stats for all time
+        $categoryStats = AccessLog::query()
+            ->selectRaw(
+                'SUM(CASE WHEN status = \'authorized\' THEN 1 ELSE 0 END) as cat_authorized,
+                SUM(CASE WHEN status = \'wrong group\' THEN 1 ELSE 0 END) as cat_wrong_group,
+                SUM(CASE WHEN status = \'no quota\' THEN 1 ELSE 0 END) as cat_no_quota,
+                SUM(CASE WHEN status = \'inactive\' THEN 1 ELSE 0 END) as cat_inactive,
+                SUM(CASE WHEN status = \'not registered\' THEN 1 ELSE 0 END) as cat_not_registered'
+            )
+            ->first();
+
+        $this->stats = [
+            'total_authorized' => (int) $authorizedStats->total,
+            'total_quota' => (int) QuotaSchedule::sum('add_quota'),
+            'active_count' => (int) $authorizedStats->active_count,
+            'inactive_count' => (int) $authorizedStats->inactive_count,
+            'merah_count' => (int) $authorizedStats->merah_count,
+            'biru_count' => (int) $authorizedStats->biru_count,
+            'total_access_logs' => (int) ($accessLogTodayStats->total ?? 0),
+            'access_success_count' => (int) ($accessLogTodayStats->success_count ?? 0),
+            'access_failed_count' => (int) ($accessLogTodayStats->failed_count ?? 0),
+            'category_authorized' => (int) ($categoryStats->cat_authorized ?? 0),
+            'category_wrong_group' => (int) ($categoryStats->cat_wrong_group ?? 0),
+            'category_no_quota' => (int) ($categoryStats->cat_no_quota ?? 0),
+            'category_inactive' => (int) ($categoryStats->cat_inactive ?? 0),
+            'category_not_registered' => (int) ($categoryStats->cat_not_registered ?? 0),
+        ];
+
         return [
-            'stats' => [
-                'total_authorized' => (int) $authorizedStats->total,
-                'total_quota' => (int) QuotaSchedule::sum('add_quota'),
-                'active_count' => (int) $authorizedStats->active_count,
-                'inactive_count' => (int) $authorizedStats->inactive_count,
-                'merah_count' => (int) $authorizedStats->merah_count,
-                'biru_count' => (int) $authorizedStats->biru_count,
-                'total_access_logs' => (int) $accessLogStats->total,
-                'access_success_count' => (int) $accessLogStats->success_count,
-                'access_failed_count' => (int) $accessLogStats->failed_count,
-            ],
-            'trends' => $trends,
+            'stats' => $this->stats,
+            'trends' => $this->trends,
         ];
     }
 }; ?>
@@ -65,6 +95,10 @@ new class extends Component {
 <div class="flex h-full w-full flex-1 flex-col gap-6" x-data="{
     stats: @js($stats),
     trends: @js($trends),
+    groupChartInstance: null,
+    statusChartInstance: null,
+    trendChartInstance: null,
+    categoryChartInstance: null,
     init() {
         if (typeof window.ApexCharts === 'undefined') {
             const script = document.createElement('script');
@@ -75,10 +109,49 @@ new class extends Component {
         } else {
             this.initCharts();
         }
+
+        this.$watch('$wire.trends', value => {
+            if (this.trendChartInstance) {
+                this.trendChartInstance.updateSeries([{
+                    name: 'Quota Added',
+                    data: value
+                }]);
+            }
+        });
+
+        this.$watch('$wire.stats', value => {
+            if (this.groupChartInstance) {
+                this.groupChartInstance.updateSeries([value.merah_count, value.biru_count]);
+            }
+            if (this.statusChartInstance) {
+                this.statusChartInstance.updateSeries([{
+                    name: 'Users',
+                    data: [value.active_count, value.inactive_count]
+                }]);
+            }
+            if (this.categoryChartInstance) {
+                this.categoryChartInstance.updateSeries([{
+                    name: 'Logs Count',
+                    data: [
+                        value.category_authorized,
+                        value.category_wrong_group,
+                        value.category_no_quota,
+                        value.category_inactive,
+                        value.category_not_registered
+                    ]
+                }]);
+            }
+        });
     },
     initCharts() {
+        // Clear any existing instances to avoid duplicates
+        this.$refs.groupChart.innerHTML = '';
+        this.$refs.statusChart.innerHTML = '';
+        this.$refs.categoryChart.innerHTML = '';
+        this.$refs.trendChart.innerHTML = '';
+
         // Group Distribution Chart (Donut)
-        new ApexCharts(this.$refs.groupChart, {
+        this.groupChartInstance = new ApexCharts(this.$refs.groupChart, {
             chart: {
                 type: 'donut',
                 height: 320,
@@ -106,10 +179,11 @@ new class extends Component {
                 }
             },
             stroke: { show: false }
-        }).render();
+        });
+        this.groupChartInstance.render();
 
         // Status Distribution Chart (Bar)
-        new ApexCharts(this.$refs.statusChart, {
+        this.statusChartInstance = new ApexCharts(this.$refs.statusChart, {
             chart: {
                 type: 'bar',
                 height: 320,
@@ -141,10 +215,51 @@ new class extends Component {
                 offsetY: -20,
                 style: { fontSize: '12px', colors: ['#5b5856'] }
             }
-        }).render();
+        });
+        this.statusChartInstance.render();
+
+        // Category Distribution Chart (Horizontal Bar)
+        this.categoryChartInstance = new ApexCharts(this.$refs.categoryChart, {
+            chart: {
+                type: 'bar',
+                height: 320,
+                toolbar: { show: false },
+                fontFamily: 'inherit'
+            },
+            series: [{
+                name: 'Logs Count',
+                data: [
+                    this.stats.category_authorized,
+                    this.stats.category_wrong_group,
+                    this.stats.category_no_quota,
+                    this.stats.category_inactive,
+                    this.stats.category_not_registered
+                ]
+            }],
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    borderRadius: 8,
+                    barHeight: '60%',
+                    distributed: true,
+                    dataLabels: { position: 'right' }
+                }
+            },
+            colors: ['#22C55E', '#F59E0B', '#EF4444', '#71717A', '#EC4899'],
+            xaxis: {
+                categories: ['Authorized', 'Wrong Group', 'No Quota', 'Inactive', 'Not Registered'],
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            legend: { show: false },
+            dataLabels: {
+                enabled: false
+            }
+        });
+        this.categoryChartInstance.render();
 
         // Trends Chart (Area)
-        new ApexCharts(this.$refs.trendChart, {
+        this.trendChartInstance = new ApexCharts(this.$refs.trendChart, {
             chart: {
                 type: 'area',
                 height: 350,
@@ -172,9 +287,10 @@ new class extends Component {
                     stops: [0, 90, 100]
                 }
             },
-            markers: { size: 5, strokeWidth: 3, hover: { size: 7 } },
+            markers: { size: 5, strokeWidth: 0, fillColor: '#3B82F6', strokeColors: '#3B82F6', hover: { size: 7 } },
             grid: { borderColor: '#e2e8f0' }
-        }).render();
+        });
+        this.trendChartInstance.render();
     }
 }">
     {{-- Header --}}
@@ -207,7 +323,7 @@ new class extends Component {
                 <div class="p-2 rounded-lg bg-violet-500/10 text-violet-500 group-hover:bg-violet-500 group-hover:text-white transition-colors">
                     <flux:icon name="document-text" variant="mini" />
                 </div>
-                <flux:text size="sm" font="medium">Total Access Logs</flux:text>
+                <flux:text size="sm" font="medium">Access Logs (Today)</flux:text>
             </div>
             <div class="flex items-baseline gap-2 flex-wrap">
                 <flux:heading size="xl" class="group-hover:text-violet-500 transition-colors">{{ number_format($stats['total_access_logs']) }}</flux:heading>
@@ -237,13 +353,13 @@ new class extends Component {
     </div>
 
     {{-- Main Charts Grid --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <flux:card class="flex flex-col gap-4">
             <div class="flex items-center justify-between">
                 <flux:heading size="lg">Group Distribution</flux:heading>
                 <flux:text size="xs" class="text-zinc-400">Color-coded Access</flux:text>
             </div>
-            <div class="flex-1" x-ref="groupChart"></div>
+            <div class="flex-1" x-ref="groupChart" wire:ignore></div>
         </flux:card>
 
         <flux:card class="flex flex-col gap-4">
@@ -251,19 +367,31 @@ new class extends Component {
                 <flux:heading size="lg">Access Status</flux:heading>
                 <flux:text size="xs" class="text-zinc-400">Active vs Inactive</flux:text>
             </div>
-            <div class="flex-1" x-ref="statusChart"></div>
+            <div class="flex-1" x-ref="statusChart" wire:ignore></div>
+        </flux:card>
+
+        <flux:card class="flex flex-col gap-4">
+             <div class="flex items-center justify-between">
+                <flux:heading size="lg">Access Log Categories</flux:heading>
+                <flux:text size="xs" class="text-zinc-400">All-time status distribution</flux:text>
+            </div>
+            <div class="flex-1" x-ref="categoryChart" wire:ignore></div>
         </flux:card>
     </div>
 
     {{-- Trends Section --}}
     <flux:card class="flex flex-col gap-4">
-        <div class="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800 gap-4">
             <div>
                 <flux:heading size="lg">Quota Addition History</flux:heading>
                 <flux:subheading>Tracking the volume of quota additions over time.</flux:subheading>
             </div>
-            {{-- <flux:button variant="ghost" icon="arrow-down-tray" size="sm">Export Data</flux:button> --}}
+            <div class="flex items-center gap-2">
+                <flux:input type="date" wire:model.live="startDate" size="sm" class="w-36" />
+                <span class="text-zinc-400 text-sm">to</span>
+                <flux:input type="date" wire:model.live="endDate" size="sm" class="w-36" />
+            </div>
         </div>
-        <div class="h-80 w-full" x-ref="trendChart"></div>
+        <div class="h-80 w-full" x-ref="trendChart" wire:ignore></div>
     </flux:card>
 </div>

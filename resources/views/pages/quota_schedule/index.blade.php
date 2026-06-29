@@ -12,6 +12,8 @@ new class extends Component
     use WithPagination;
 
     public string $search = '';
+    public string $startDate = '';
+    public string $endDate = '';
 
     public string $currentTab = 'pending';
 
@@ -45,15 +47,22 @@ new class extends Component
 
     public string $addAuthorizedUuidSearch = '';
 
-    public function mount()
+    public function mount(): void
     {
         $this->addTargetDate = \Carbon\Carbon::today()->toDateString();
     }
 
-    public function setTab($tab)
+    public function setTab($tab): void
     {
         $this->currentTab = $tab;
         $this->resetPage(); // Reset pagination when switching tabs
+    }
+
+    public function updated($property): void
+    {
+        if (in_array($property, ['search', 'startDate', 'endDate'])) {
+            $this->resetPage();
+        }
     }
 
     public function with(): array
@@ -75,6 +84,8 @@ new class extends Component
                         });
                     });
                 })
+                ->when($this->startDate, fn ($q) => $q->where('target_date', '>=', $this->startDate))
+                ->when($this->endDate, fn ($q) => $q->where('target_date', '<=', $this->endDate))
                 ->orderBy('target_date', 'asc')
                 ->paginate(10),
             'availableAuthorizeds' => Authorized::query()
@@ -95,7 +106,7 @@ new class extends Component
         ];
     }
 
-    public function edit($id)
+    public function edit($id): void
     {
         $quotaSchedule = QuotaSchedule::with('authorized.user')->findOrFail($id);
 
@@ -111,13 +122,13 @@ new class extends Component
         $this->showEditModal = true;
     }
 
-    public function closeEditModal()
+    public function closeEditModal(): void
     {
         $this->showEditModal = false;
         $this->editingQuotaScheduleId = null;
     }
 
-    public function update()
+    public function update(): void
     {
         $this->validate([
             'editAddQuota' => 'required|integer|min:1',
@@ -145,7 +156,7 @@ new class extends Component
         }
     }
 
-    public function confirmDelete($id)
+    public function confirmDelete($id): void
     {
         $quotaSchedule = QuotaSchedule::with('authorized')->findOrFail($id);
 
@@ -156,14 +167,14 @@ new class extends Component
         $this->showDeleteModal = true;
     }
 
-    public function closeDeleteModal()
+    public function closeDeleteModal(): void
     {
         $this->showDeleteModal = false;
         $this->deletingQuotaScheduleId = null;
         $this->deleteAuthorizedUuid = '';
     }
 
-    public function destroy()
+    public function destroy(): void
     {
         try {
             $quotaSchedule = QuotaSchedule::findOrFail($this->deletingQuotaScheduleId);
@@ -182,7 +193,7 @@ new class extends Component
         }
     }
 
-    public function openAddModal()
+    public function openAddModal(): void
     {
         Gate::authorize('create', QuotaSchedule::class);
 
@@ -192,13 +203,13 @@ new class extends Component
         $this->showAddModal = true;
     }
 
-    public function closeAddModal()
+    public function closeAddModal(): void
     {
         $this->showAddModal = false;
         $this->reset(['addAuthorizedUuidSearch']);
     }
 
-    public function store()
+    public function store(): void
     {
         Gate::authorize('create', QuotaSchedule::class);
 
@@ -262,13 +273,34 @@ new class extends Component
     </div>
 
     {{-- Filters --}}
-    <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
-        <flux:input
-            wire:model.live="search"
-            icon="magnifying-glass"
-            placeholder="Search by User..."
-            class="w-full sm:max-w-xs"
-        />
+    <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900" x-data="{ showFilters: false }">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <flux:input
+                wire:model.live="search"
+                icon="magnifying-glass"
+                placeholder="Search by User..."
+                class="w-full sm:max-w-xs"
+            />
+            @php
+                $activeFilterCount = collect([$startDate, $endDate])->filter()->count();
+            @endphp
+            <flux:button @click="showFilters = !showFilters" icon="funnel" :variant="$activeFilterCount > 0 ? 'primary' : 'filled'">
+                Filter @if($activeFilterCount > 0) ({{ $activeFilterCount }}) @endif
+            </flux:button>
+        </div>
+
+        <div x-show="showFilters" x-transition class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+            {{-- Start Date --}}
+            <flux:input type="date" wire:model.live="startDate" label="Start Date" />
+
+            {{-- End Date --}}
+            <flux:input type="date" wire:model.live="endDate" label="End Date" />
+
+            {{-- Reset Button --}}
+            <div class="col-span-1 sm:col-span-2 flex justify-end gap-2 mt-2">
+                <flux:button size="sm" wire:click="$set('startDate', ''); $set('endDate', '');" variant="ghost">Reset Filters</flux:button>
+            </div>
+        </div>
     </div>
 
     {{-- Table Card --}}
