@@ -21,12 +21,12 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
-            # - shared_network
+            - shared_network
         # depends_on: []
 
 networks:
     sail:
         driver: bridge
-    # shared_network:
-    #     external: true
-    #     name: management_portal_backend_shared_network
+    shared_network:
+        external: true
+        name: portal_shared_network
