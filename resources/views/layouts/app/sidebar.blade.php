@@ -45,6 +45,7 @@
                             ['route' => 'dashboard', 'icon' => 'home', 'label' => 'Dashboard'],
                             ['route' => 'authorized.index', 'icon' => 'users', 'label' => 'Authorized', 'can' => 'catera:authorized:view_any'],
                             ['route' => 'quota_schedules.index', 'icon' => 'clock', 'label' => 'Quota Schedules', 'can' => 'catera:quota_scheduling:view_any'],
+                            ['route' => 'access_logs.index', 'icon' => 'document-text', 'label' => 'Access Logs', 'can' => 'catera:access_logs:view_any'],
                         ];
                     @endphp
 

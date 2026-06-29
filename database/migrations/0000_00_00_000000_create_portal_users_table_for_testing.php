@@ -48,6 +48,10 @@ return new class extends Migration
                 ['name' => 'catera:authorized:create', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
                 ['name' => 'catera:authorized:update', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
                 ['name' => 'catera:authorized:delete', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'catera:authorized:view_any', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'catera:quota_scheduling:view_any', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'catera:access_logs:view_any', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
+                ['name' => 'catera:dashboard:view', 'guard_name' => 'web', 'created_at' => now(), 'updated_at' => now()],
             ]);
 
             // Create Spatie md_roles

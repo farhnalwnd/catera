@@ -2,6 +2,7 @@
 
 use App\Models\Authorized;
 use App\Models\QuotaSchedule;
+use App\Models\AccessLog;
 use Livewire\Component;
 
 new class extends Component {
@@ -32,6 +33,16 @@ new class extends Component {
             )
             ->first();
 
+        // Get access log stats
+        $accessLogStats = AccessLog::query()
+            ->selectRaw(
+                'COUNT(*) as total,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as success_count,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed_count',
+                ['success', 'failed']
+            )
+            ->first();
+
         return [
             'stats' => [
                 'total_authorized' => (int) $authorizedStats->total,
@@ -40,6 +51,9 @@ new class extends Component {
                 'inactive_count' => (int) $authorizedStats->inactive_count,
                 'merah_count' => (int) $authorizedStats->merah_count,
                 'biru_count' => (int) $authorizedStats->biru_count,
+                'total_access_logs' => (int) $accessLogStats->total,
+                'access_success_count' => (int) $accessLogStats->success_count,
+                'access_failed_count' => (int) $accessLogStats->failed_count,
             ],
             'trends' => $trends,
         ];
@@ -73,7 +87,7 @@ new class extends Component {
             },
             series: [this.stats.merah_count, this.stats.biru_count],
             labels: ['Merah', 'Biru'],
-            colors: ['#3f8f81', '#4da8cf'],
+            colors: ['#EF4444', '#3B82F6'],
             legend: { position: 'bottom', fontSize: '14px' },
             dataLabels: { enabled: true, dropShadow: { enabled: false } },
             plotOptions: {
@@ -114,7 +128,7 @@ new class extends Component {
                     dataLabels: { position: 'top' }
                 }
             },
-            colors: ['#4da8cf', '#5b5856'],
+            colors: ['#22C55E', '#71717A'],
             xaxis: {
                 categories: ['Active', 'Inactive'],
                 axisBorder: { show: false },
@@ -147,7 +161,7 @@ new class extends Component {
                 labels: { datetimeUTC: false }
             },
             yaxis: { title: { text: 'Quota' } },
-            colors: ['#3f8f81'],
+            colors: ['#3B82F6'],
             stroke: { curve: 'smooth', width: 3 },
             fill: {
                 type: 'gradient',
@@ -174,46 +188,47 @@ new class extends Component {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-[#3f8f81]/10 text-[#3f8f81] group-hover:bg-[#3f8f81] group-hover:text-white transition-colors">
+                <div class="p-2 rounded-lg bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                     <flux:icon name="users" variant="mini" />
                 </div>
                 <flux:text size="sm" font="medium">Total Authorized</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-[#3f8f81] transition-colors">{{ number_format($stats['total_authorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-[#3f8f81] font-semibold bg-[#3f8f81]/10 px-2 py-0.5 rounded-full">Verified</flux:text>
+                <flux:heading size="xl" class="group-hover:text-blue-500 transition-colors">{{ number_format($stats['total_authorized']) }}</flux:heading>
+                <flux:text size="xs" class="text-blue-500 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">Verified</flux:text>
             </div>
             <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="users" size="xl" class="size-32" />
             </div>
         </flux:card>
 
-        {{-- <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
+        <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-[#5b5856]/10 text-[#5b5856] group-hover:bg-[#5b5856] group-hover:text-white transition-colors">
-                    <flux:icon name="exclamation-triangle" variant="mini" />
+                <div class="p-2 rounded-lg bg-violet-500/10 text-violet-500 group-hover:bg-violet-500 group-hover:text-white transition-colors">
+                    <flux:icon name="document-text" variant="mini" />
                 </div>
-                <flux:text size="sm" font="medium">Unauthorized Attempts</flux:text>
+                <flux:text size="sm" font="medium">Total Access Logs</flux:text>
             </div>
-            <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-[#5b5856] transition-colors">{{ number_format($stats['total_unauthorized']) }}</flux:heading>
-                <flux:text size="xs" class="text-[#5b5856] font-semibold bg-[#5b5856]/10 px-2 py-0.5 rounded-full">Blocked</flux:text>
+            <div class="flex items-baseline gap-2 flex-wrap">
+                <flux:heading size="xl" class="group-hover:text-violet-500 transition-colors">{{ number_format($stats['total_access_logs']) }}</flux:heading>
+                <flux:text size="xs" class="text-green-600 font-semibold bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">{{ number_format($stats['access_success_count']) }} Success</flux:text>
+                <flux:text size="xs" class="text-red-600 font-semibold bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">{{ number_format($stats['access_failed_count']) }} Failed</flux:text>
             </div>
              <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
-                 <flux:icon name="exclamation-triangle" size="xl" class="size-32" />
+                 <flux:icon name="document-text" size="xl" class="size-32" />
             </div>
-        </flux:card> --}}
+        </flux:card>
 
         <flux:card class="group relative flex flex-col gap-2 overflow-hidden p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer">
             <div class="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                <div class="p-2 rounded-lg bg-[#4da8cf]/10 text-[#4da8cf] group-hover:bg-[#4da8cf] group-hover:text-white transition-colors">
+                <div class="p-2 rounded-lg bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
                     <flux:icon name="bolt" variant="mini" />
                 </div>
                 <flux:text size="sm" font="medium">Quota Distributed</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
-                <flux:heading size="xl" class="group-hover:text-[#4da8cf] transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
-                <flux:text size="xs" class="text-[#4da8cf] font-semibold bg-[#4da8cf]/10 px-2 py-0.5 rounded-full">Units</flux:text>
+                <flux:heading size="xl" class="group-hover:text-amber-500 transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
+                <flux:text size="xs" class="text-amber-500 font-semibold bg-amber-500/10 px-2 py-0.5 rounded-full">Units</flux:text>
             </div>
              <div class="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                  <flux:icon name="bolt" size="xl" class="size-32" />
