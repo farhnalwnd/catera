@@ -168,6 +168,29 @@ test('create authorized fails with duplicate uuid', function () {
         ->assertHasErrors(['addUuid']);
 });
 
+test('create authorized fails with duplicate user_id', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo(['catera:authorized:view_any', 'catera:authorized:create']);
+    $this->actingAs($user);
+
+    $existing = Authorized::create([
+        'user_id' => $user->id,
+        'uuid' => (string) Str::uuid(),
+        'group' => 'merah',
+        'quota' => 10,
+        'is_active' => true,
+    ]);
+
+    Livewire::test('pages::authorized.index')
+        ->set('addUuid', (string) Str::uuid())
+        ->set('addUserId', $user->id)
+        ->set('addGroup', 'merah')
+        ->set('addQuota', '10')
+        ->set('addIsActive', true)
+        ->call('store')
+        ->assertHasErrors(['addUserId']);
+});
+
 test('update authorized record', function () {
     $user = User::factory()->create();
     $user->givePermissionTo(['catera:authorized:view_any', 'catera:authorized:update']);

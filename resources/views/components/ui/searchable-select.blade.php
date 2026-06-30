@@ -240,5 +240,11 @@
                 </ul>
             </div>
         </div>
+
+        @error($wireModel)
+            <flux:text color="red" class="mt-1 text-sm">
+                {{ $message }}
+            </flux:text>
+        @enderror
     </flux:field>
 </div>

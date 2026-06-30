@@ -223,7 +223,7 @@ new class extends Component
         $this->validate([
             'addAuthorizedUuid' => ['required', 'string', 'exists:authorizeds,uuid'],
             'addAddQuota' => ['required', 'integer', 'min:1'],
-            'addTargetDate' => ['required', 'date'],
+            'addTargetDate' => ['required', 'date', 'after_or_equal:today'],
         ]);
 
         $hasDuplicate = QuotaSchedule::query()
@@ -466,7 +466,7 @@ new class extends Component
 
             <div class="grid grid-cols-2 gap-4">
                 <flux:input wire:model="addAddQuota" label="Quota to Add" type="number" min="1" />
-                <flux:input wire:model="addTargetDate" label="Target Date" type="date" />
+                <flux:input wire:model="addTargetDate" label="Target Date" type="date" min="{{ now()->toDateString() }}" />
             </div>
 
             <div class="flex justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">

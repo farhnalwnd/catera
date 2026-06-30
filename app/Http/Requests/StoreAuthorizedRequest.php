@@ -15,7 +15,7 @@ class StoreAuthorizedRequest extends FormRequest
     {
         return [
             'addUuid' => 'required|unique:authorizeds,uuid',
-            'addUserId' => 'required|integer|exists:md_users,id',
+            'addUserId' => 'required|integer|exists:md_users,id|unique:authorizeds,user_id',
             'addGroup' => 'required|in:merah,biru',
             'addQuota' => 'required|numeric',
             'addIsActive' => 'boolean',
