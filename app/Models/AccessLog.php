@@ -26,6 +26,14 @@ class AccessLog extends Model
         ];
     }
 
+    public function scopeToday(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereBetween('scanned_at', [
+            now()->startOfDay(),
+            now()->endOfDay(),
+        ]);
+    }
+
     /**
      * Get the authorized user associated with the access log.
      */

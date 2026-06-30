@@ -27,6 +27,18 @@ class QuotaSchedule extends Model
         ];
     }
 
+    public function scopeCurrentMonth(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->whereYear('target_date', now()->year)
+            ->whereMonth('target_date', now()->month);
+    }
+
+    public function scopeInDateRange(\Illuminate\Database\Eloquent\Builder $query, ?string $startDate, ?string $endDate): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->when($startDate, fn ($q) => $q->where('target_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->where('target_date', '<=', $endDate));
+    }
+
     /**
      * Get the authorized associated with the quota schedule record.
      */

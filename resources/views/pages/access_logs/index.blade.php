@@ -42,8 +42,8 @@ new class extends Component
                 })
                 ->when($this->filterGroup, fn ($q) => $q->where('group', $this->filterGroup))
                 ->when($this->filterStatus, fn ($q) => $q->where('status', $this->filterStatus))
-                ->when($this->startDate, fn ($q) => $q->whereDate('scanned_at', '>=', $this->startDate))
-                ->when($this->endDate, fn ($q) => $q->whereDate('scanned_at', '<=', $this->endDate))
+                ->when($this->startDate, fn ($q) => $q->where('scanned_at', '>=', $this->startDate))
+                ->when($this->endDate, fn ($q) => $q->where('scanned_at', '<=', $this->endDate))
                 ->orderByDesc('scanned_at')
                 ->paginate(15),
         ];

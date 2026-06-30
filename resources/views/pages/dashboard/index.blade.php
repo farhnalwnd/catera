@@ -1,8 +1,6 @@
 <?php
 
-use App\Models\Authorized;
-use App\Models\QuotaSchedule;
-use App\Models\AccessLog;
+use App\Services\DashboardService;
 use Livewire\Component;
 
 new class extends Component {
@@ -19,69 +17,15 @@ new class extends Component {
 
     public function with(): array
     {
-        // Get trend data filtered by date range
-        $this->trends = QuotaSchedule::selectRaw('DATE(target_date) as date, SUM(add_quota) as total')
-            ->whereNotNull('target_date')
-            ->when($this->startDate, fn ($query) => $query->where('target_date', '>=', $this->startDate))
-            ->when($this->endDate, fn ($query) => $query->where('target_date', '<=', $this->endDate))
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get()
-            ->map(fn ($item) => [
-                'x' => strtotime($item->date) * 1000,
-                'y' => (int) $item->total,
-            ])
-            ->toArray();
+        $service = app(DashboardService::class);
 
-        // Single aggregated query for authorized stats
-        $authorizedStats = Authorized::query()
-            ->selectRaw(
-                'COUNT(*) as total,
-                SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_count,
-                SUM(CASE WHEN is_active = false THEN 1 ELSE 0 END) as inactive_count,
-                SUM(CASE WHEN "group" = ? THEN 1 ELSE 0 END) as merah_count,
-                SUM(CASE WHEN "group" = ? THEN 1 ELSE 0 END) as biru_count',
-                ['merah', 'biru']
-            )
-            ->first();
+        $this->trends = $service->getTrends($this->startDate, $this->endDate);
 
-        // Get access log stats for today only
-        $accessLogTodayStats = AccessLog::query()
-            ->whereDate('scanned_at', now()->toDateString())
-            ->selectRaw(
-                'COUNT(*) as total,
-                SUM(CASE WHEN status = \'authorized\' THEN 1 ELSE 0 END) as success_count,
-                SUM(CASE WHEN status != \'authorized\' THEN 1 ELSE 0 END) as failed_count'
-            )
-            ->first();
-
-        // Get category stats for all time
-        $categoryStats = AccessLog::query()
-            ->selectRaw(
-                'SUM(CASE WHEN status = \'authorized\' THEN 1 ELSE 0 END) as cat_authorized,
-                SUM(CASE WHEN status = \'wrong group\' THEN 1 ELSE 0 END) as cat_wrong_group,
-                SUM(CASE WHEN status = \'no quota\' THEN 1 ELSE 0 END) as cat_no_quota,
-                SUM(CASE WHEN status = \'inactive\' THEN 1 ELSE 0 END) as cat_inactive,
-                SUM(CASE WHEN status = \'not registered\' THEN 1 ELSE 0 END) as cat_not_registered'
-            )
-            ->first();
-
-        $this->stats = [
-            'total_authorized' => (int) $authorizedStats->total,
-            'total_quota' => (int) QuotaSchedule::sum('add_quota'),
-            'active_count' => (int) $authorizedStats->active_count,
-            'inactive_count' => (int) $authorizedStats->inactive_count,
-            'merah_count' => (int) $authorizedStats->merah_count,
-            'biru_count' => (int) $authorizedStats->biru_count,
-            'total_access_logs' => (int) ($accessLogTodayStats->total ?? 0),
-            'access_success_count' => (int) ($accessLogTodayStats->success_count ?? 0),
-            'access_failed_count' => (int) ($accessLogTodayStats->failed_count ?? 0),
-            'category_authorized' => (int) ($categoryStats->cat_authorized ?? 0),
-            'category_wrong_group' => (int) ($categoryStats->cat_wrong_group ?? 0),
-            'category_no_quota' => (int) ($categoryStats->cat_no_quota ?? 0),
-            'category_inactive' => (int) ($categoryStats->cat_inactive ?? 0),
-            'category_not_registered' => (int) ($categoryStats->cat_not_registered ?? 0),
-        ];
+        $this->stats = array_merge(
+            $service->getStats(),
+            $service->getTodayStats(),
+            $service->getCategoryStats()
+        );
 
         return [
             'stats' => $this->stats,
@@ -144,13 +88,11 @@ new class extends Component {
         });
     },
     initCharts() {
-        // Clear any existing instances to avoid duplicates
         this.$refs.groupChart.innerHTML = '';
         this.$refs.statusChart.innerHTML = '';
         this.$refs.categoryChart.innerHTML = '';
         this.$refs.trendChart.innerHTML = '';
 
-        // Group Distribution Chart (Donut)
         this.groupChartInstance = new ApexCharts(this.$refs.groupChart, {
             chart: {
                 type: 'donut',
@@ -182,7 +124,6 @@ new class extends Component {
         });
         this.groupChartInstance.render();
 
-        // Status Distribution Chart (Bar)
         this.statusChartInstance = new ApexCharts(this.$refs.statusChart, {
             chart: {
                 type: 'bar',
@@ -218,7 +159,6 @@ new class extends Component {
         });
         this.statusChartInstance.render();
 
-        // Category Distribution Chart (Horizontal Bar)
         this.categoryChartInstance = new ApexCharts(this.$refs.categoryChart, {
             chart: {
                 type: 'bar',
@@ -258,7 +198,6 @@ new class extends Component {
         });
         this.categoryChartInstance.render();
 
-        // Trends Chart (Area)
         this.trendChartInstance = new ApexCharts(this.$refs.trendChart, {
             chart: {
                 type: 'area',
@@ -340,7 +279,7 @@ new class extends Component {
                 <div class="p-2 rounded-lg bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors">
                     <flux:icon name="bolt" variant="mini" />
                 </div>
-                <flux:text size="sm" font="medium">Quota Distributed</flux:text>
+                <flux:text size="sm" font="medium">Quota Distributed (This Month)</flux:text>
             </div>
             <div class="flex items-baseline gap-2">
                 <flux:heading size="xl" class="group-hover:text-amber-500 transition-colors">{{ number_format($stats['total_quota']) }}</flux:heading>
