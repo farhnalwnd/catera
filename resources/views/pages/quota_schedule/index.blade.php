@@ -60,6 +60,13 @@ new class extends Component
 
     public function updated($property): void
     {
+        if (in_array($property, ['startDate', 'endDate'])) {
+            $this->validate([
+                'startDate' => 'nullable|date_format:Y-m-d',
+                'endDate' => 'nullable|date_format:Y-m-d',
+            ]);
+        }
+
         if (in_array($property, ['search', 'startDate', 'endDate'])) {
             $this->resetPage();
         }
@@ -71,34 +78,34 @@ new class extends Component
 
         return [
             'quotaSchedules' => QuotaSchedule::query()
+                ->select('catera.quota_schedules.*')
+                ->join('catera.authorizeds', 'catera.quota_schedules.authorized_uuid', '=', 'catera.authorizeds.uuid')
+                ->join('portal_application.md_users', 'catera.authorizeds.user_id', '=', 'portal_application.md_users.id')
                 ->with('authorized.user')
-                ->where('status', $this->currentTab)
+                ->where('catera.quota_schedules.status', $this->currentTab)
                 ->when($this->search, function ($query) {
                     $query->where(function ($q) {
-                        $q->whereHas('authorized.user', function ($uq) {
-                            $uq->where('first_name', 'ilike', "{$this->search}%")
-                               ->orWhere('last_name', 'ilike', "{$this->search}%")
-                               ->orWhere('nik', 'ilike', "{$this->search}%");
-                        })->orWhereHas('authorized', function ($aq) {
-                            $aq->where('uuid', 'ilike', "{$this->search}%");
-                        });
+                        $q->where('portal_application.md_users.first_name', 'ilike', "{$this->search}%")
+                           ->orWhere('portal_application.md_users.last_name', 'ilike', "{$this->search}%")
+                           ->orWhere('portal_application.md_users.nik', 'ilike', "{$this->search}%")
+                           ->orWhere('catera.authorizeds.uuid', 'ilike', "{$this->search}%");
                     });
                 })
-                ->when($this->startDate, fn ($q) => $q->where('target_date', '>=', $this->startDate))
-                ->when($this->endDate, fn ($q) => $q->where('target_date', '<=', $this->endDate))
-                ->orderBy('target_date', 'asc')
+                ->when($this->startDate, fn ($q) => $q->where('catera.quota_schedules.target_date', '>=', $this->startDate))
+                ->when($this->endDate, fn ($q) => $q->where('catera.quota_schedules.target_date', '<=', $this->endDate))
+                ->orderBy('catera.quota_schedules.target_date', 'asc')
                 ->paginate(10),
             'availableAuthorizeds' => Authorized::query()
+                ->select('catera.authorizeds.*')
+                ->join('portal_application.md_users', 'catera.authorizeds.user_id', '=', 'portal_application.md_users.id')
                 ->with('user')
                 ->active()
                 ->when($this->addAuthorizedUuidSearch, function ($query) {
                     $query->where(function ($q) {
-                        $q->where('uuid', 'ilike', "{$this->addAuthorizedUuidSearch}%")
-                          ->orWhere('group', 'ilike', "{$this->addAuthorizedUuidSearch}%")
-                          ->orWhereHas('user', function ($userQuery) {
-                              $userQuery->where('first_name', 'ilike', "{$this->addAuthorizedUuidSearch}%")
-                                        ->orWhere('last_name', 'ilike', "{$this->addAuthorizedUuidSearch}%");
-                          });
+                        $q->where('catera.authorizeds.uuid', 'ilike', "{$this->addAuthorizedUuidSearch}%")
+                          ->orWhere('catera.authorizeds.group', 'ilike', "{$this->addAuthorizedUuidSearch}%")
+                          ->orWhere('portal_application.md_users.first_name', 'ilike', "{$this->addAuthorizedUuidSearch}%")
+                          ->orWhere('portal_application.md_users.last_name', 'ilike', "{$this->addAuthorizedUuidSearch}%");
                     });
                 })
                 ->take(8)
@@ -219,15 +226,25 @@ new class extends Component
             'addTargetDate' => ['required', 'date'],
         ]);
 
+        $hasDuplicate = QuotaSchedule::query()
+            ->where('authorized_uuid', $this->addAuthorizedUuid)
+            ->where('target_date', $this->addTargetDate)
+            ->where('status', '!=', 'failed')
+            ->exists();
+
+        if ($hasDuplicate) {
+            $this->dispatch('notify', message: 'A schedule already exists for this user on the selected date.', variant: 'danger');
+
+            return;
+        }
+
         try {
-            \Illuminate\Support\Facades\DB::transaction(function () {
-                QuotaSchedule::create([
-                    'authorized_uuid' => $this->addAuthorizedUuid,
-                    'add_quota' => $this->addAddQuota,
-                    'target_date' => $this->addTargetDate,
-                    'status' => 'pending',
-                ]);
-            });
+            QuotaSchedule::create([
+                'authorized_uuid' => $this->addAuthorizedUuid,
+                'add_quota' => $this->addAddQuota,
+                'target_date' => $this->addTargetDate,
+                'status' => 'pending',
+            ]);
 
             $this->closeAddModal();
             $this->reset(['addAuthorizedUuid', 'addAuthorizedUuidSearch']);
@@ -276,7 +293,7 @@ new class extends Component
     <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900" x-data="{ showFilters: false }">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <flux:input
-                wire:model.live="search"
+                wire:model.live.debounce.300ms="search"
                 icon="magnifying-glass"
                 placeholder="Search by User..."
                 class="w-full sm:max-w-xs"

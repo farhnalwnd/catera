@@ -27,24 +27,25 @@ new class extends Component
 
         return [
             'accessLogs' => AccessLog::query()
+                ->select('catera.access_logs.*')
                 ->with('authorized.user')
                 ->when($this->search, function ($query) {
-                    $query->where(function ($q) {
-                        $q->where('uuid', 'ilike', $this->search . '%')
-                            ->orWhere('group', 'ilike', $this->search . '%')
-                            ->orWhere('status', 'ilike', $this->search . '%')
-                            ->orWhereHas('authorized.user', function ($userQuery) {
-                                $userQuery->where('first_name', 'ilike', $this->search . '%')
-                                    ->orWhere('last_name', 'ilike', $this->search . '%')
-                                    ->orWhere('nik', 'ilike', $this->search . '%');
-                            });
-                    });
+                    $query->leftJoin('catera.authorizeds', 'catera.access_logs.authorizeds_id', '=', 'catera.authorizeds.id')
+                        ->leftJoin('portal_application.md_users', 'catera.authorizeds.user_id', '=', 'portal_application.md_users.id')
+                        ->where(function ($q) {
+                            $q->where('catera.access_logs.uuid', 'ilike', $this->search . '%')
+                                ->orWhere('catera.access_logs.group', 'ilike', $this->search . '%')
+                                ->orWhere('catera.access_logs.status', 'ilike', $this->search . '%')
+                                ->orWhere('portal_application.md_users.first_name', 'ilike', $this->search . '%')
+                                ->orWhere('portal_application.md_users.last_name', 'ilike', $this->search . '%')
+                                ->orWhere('portal_application.md_users.nik', 'ilike', $this->search . '%');
+                        });
                 })
-                ->when($this->filterGroup, fn ($q) => $q->where('group', $this->filterGroup))
-                ->when($this->filterStatus, fn ($q) => $q->where('status', $this->filterStatus))
-                ->when($this->startDate, fn ($q) => $q->where('scanned_at', '>=', $this->startDate))
-                ->when($this->endDate, fn ($q) => $q->where('scanned_at', '<=', $this->endDate))
-                ->orderByDesc('scanned_at')
+                ->when($this->filterGroup, fn ($q) => $q->where('catera.access_logs.group', $this->filterGroup))
+                ->when($this->filterStatus, fn ($q) => $q->where('catera.access_logs.status', $this->filterStatus))
+                ->when($this->startDate, fn ($q) => $q->where('catera.access_logs.scanned_at', '>=', $this->startDate))
+                ->when($this->endDate, fn ($q) => $q->where('catera.access_logs.scanned_at', '<=', $this->endDate))
+                ->orderByDesc('catera.access_logs.scanned_at')
                 ->paginate(15),
         ];
     }

@@ -46,7 +46,7 @@
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
                         $wire.set('{{ $searchWireModel }}', value);
-                    }, 1000);
+                    }, 300);
                 });
             @endif
         },

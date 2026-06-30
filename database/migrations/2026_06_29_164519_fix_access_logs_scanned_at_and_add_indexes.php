@@ -19,6 +19,8 @@ return new class extends Migration
         // 2. Add indexes
         Schema::table('access_logs', function (Blueprint $table) {
             $table->index(['scanned_at', 'status']);
+            $table->index(['scanned_at', 'group', 'status']);
+            $table->index(['scanned_at', 'authorizeds_id']);
         });
 
         Schema::table('catera.authorizeds', function (Blueprint $table) {
@@ -45,6 +47,8 @@ return new class extends Migration
 
         Schema::table('access_logs', function (Blueprint $table) {
             $table->dropIndex(['scanned_at', 'status']);
+            $table->dropIndex(['scanned_at', 'group', 'status']);
+            $table->dropIndex(['scanned_at', 'authorizeds_id']);
         });
 
         DB::statement('ALTER TABLE access_logs ALTER COLUMN scanned_at TYPE varchar(255) USING scanned_at::varchar');
