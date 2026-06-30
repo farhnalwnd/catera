@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Requests\StoreAuthorizedRequest;
+use App\Http\Requests\UpdateAuthorizedRequest;
 use App\Models\Authorized;
+use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,7 +19,7 @@ new class extends Component
 
     public bool $showEditModal = false;
 
-    public $editingAuthorizedId = null;
+    public ?int $editingAuthorizedId = null;
 
     public string $editUuid = '';
 
@@ -34,15 +36,13 @@ new class extends Component
 
     public bool $showDeleteModal = false;
 
-    public $deletingAuthorizedId = null;
+    public ?int $deletingAuthorizedId = null;
 
     public string $deleteUuid = '';
 
     public bool $showAddModal = false;
 
-    public string $addUuid = '';
-
-    public $addUserId = null;
+    public ?int $addUserId = null;
 
     public string $addUserSearch = '';
 
@@ -51,6 +51,8 @@ new class extends Component
     public string $addQuota = '';
 
     public bool $addIsActive = true;
+
+    public string $addUuid = '';
 
     public string $addUuidSearch = '';
 
@@ -75,11 +77,23 @@ new class extends Component
                 ->when($this->activeOnly, fn ($query) => $query->where('is_active', true))
                 ->paginate(10),
 
-            'portalUsers' => DB::table('portal_application.md_users')
-                ->when($this->addUserSearch, function ($q) {
-                    $q->where(function ($inner) {
-                        $inner->whereRaw("LOWER(first_name || ' ' || last_name) LIKE ?", [strtolower("{$this->addUserSearch}%")])
-                            ->orWhereRaw('LOWER(nik::text) LIKE ?', [strtolower("{$this->addUserSearch}%")]);
+            'portalUsers' => $this->showAddModal ? $this->getPortalUsers() : [],
+        ];
+    }
+
+    protected function getPortalUsers(): array
+    {
+        $cacheKey = 'portal_users_search_' . md5($this->addUserSearch);
+
+        return Cache::remember($cacheKey, 300, function () {
+            $searchTerm = str_replace(['%', '_'], ['\\%', '\\_'], $this->addUserSearch);
+
+            return User::query()
+                ->when($this->addUserSearch, function ($q) use ($searchTerm) {
+                    $q->where(function ($inner) use ($searchTerm) {
+                        $inner->where('first_name', 'ilike', "{$searchTerm}%")
+                            ->orWhere('last_name', 'ilike', "{$searchTerm}%")
+                            ->orWhere('nik', 'ilike', "{$searchTerm}%");
                     });
                 })
                 ->select('id', 'nik', 'first_name', 'last_name')
@@ -87,8 +101,8 @@ new class extends Component
                 ->limit(8)
                 ->get()
                 ->map(fn ($u) => ['id' => $u->id, 'name' => "{$u->first_name} {$u->last_name} ({$u->nik})"])
-                ->toArray(),
-        ];
+                ->toArray();
+        });
     }
 
     public function edit($id): void
@@ -115,17 +129,13 @@ new class extends Component
 
     public function update(): void
     {
-        $this->validate([
-            'editGroup' => 'required|in:merah,biru',
-            'editQuota' => 'required|numeric',
-            'editIsActive' => 'boolean',
-        ]);
+        $authorized = Authorized::findOrFail($this->editingAuthorizedId);
+
+        Gate::authorize('update', $authorized);
+
+        $this->validate((new UpdateAuthorizedRequest())->rules());
 
         try {
-            $authorized = Authorized::findOrFail($this->editingAuthorizedId);
-
-            Gate::authorize('update', $authorized);
-
             $authorized->update([
                 'group' => $this->editGroup,
                 'quota' => $this->editQuota,
@@ -135,7 +145,7 @@ new class extends Component
             $this->closeEditModal();
             $this->dispatch('notify', message: 'Authorized record updated successfully.', variant: 'success');
         } catch (\Exception $e) {
-            Log::error('Failed to update authorized record', [
+            \Illuminate\Support\Facades\Log::error('Failed to update authorized record', [
                 'error' => $e->getMessage(),
                 'authorized_id' => $this->editingAuthorizedId,
             ]);
@@ -172,7 +182,7 @@ new class extends Component
             $this->closeDeleteModal();
             $this->dispatch('notify', message: 'Authorized record deleted successfully.', variant: 'success');
         } catch (\Exception $e) {
-            Log::error('Failed to delete authorized record', [
+            \Illuminate\Support\Facades\Log::error('Failed to delete authorized record', [
                 'error' => $e->getMessage(),
                 'authorized_id' => $this->deletingAuthorizedId,
             ]);
@@ -201,13 +211,7 @@ new class extends Component
     {
         Gate::authorize('create', Authorized::class);
 
-        $this->validate([
-            'addUuid' => 'required|unique:authorizeds,uuid',
-            'addUserId' => 'required|integer|exists:md_users,id',
-            'addGroup' => 'required|in:merah,biru',
-            'addQuota' => 'required|numeric',
-            'addIsActive' => 'boolean',
-        ]);
+        $this->validate((new StoreAuthorizedRequest())->rules());
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () {
@@ -225,7 +229,7 @@ new class extends Component
             $this->addIsActive = true;
             $this->dispatch('notify', message: 'Authorized record created successfully.', variant: 'success');
         } catch (\Exception $e) {
-            Log::error('Failed to create authorized record', [
+            \Illuminate\Support\Facades\Log::error('Failed to create authorized record', [
                 'error' => $e->getMessage(),
                 'uuid' => $this->addUuid,
             ]);
@@ -254,7 +258,7 @@ new class extends Component
     {{-- Filters --}}
     <div class="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
         <flux:input
-            wire:model.live="search"
+            wire:model.live.debounce.500ms="search"
             icon="magnifying-glass"
             placeholder="Search by name, NIK or group..."
             class="w-full sm:max-w-xs"

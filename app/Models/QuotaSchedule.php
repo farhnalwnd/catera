@@ -29,8 +29,10 @@ class QuotaSchedule extends Model
 
     public function scopeCurrentMonth(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->whereYear('target_date', now()->year)
-            ->whereMonth('target_date', now()->month);
+        return $query->whereBetween('target_date', [
+            now()->startOfMonth()->toDateString(),
+            now()->endOfMonth()->toDateString(),
+        ]);
     }
 
     public function scopeInDateRange(\Illuminate\Database\Eloquent\Builder $query, ?string $startDate, ?string $endDate): \Illuminate\Database\Eloquent\Builder

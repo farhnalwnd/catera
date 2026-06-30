@@ -82,40 +82,33 @@ class DashboardService
     {
         $stats = AccessLog::query()
             ->today()
-            ->selectRaw(
-                'COUNT(*) as total,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as success_count,
-                SUM(CASE WHEN status != ? THEN 1 ELSE 0 END) as failed_count',
-                ['authorized', 'authorized']
-            )
-            ->first();
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $successCount = (int) ($stats->get('authorized') ?? 0);
+        $totalCount = (int) $stats->sum();
 
         return [
-            'total_access_logs' => (int) ($stats->total ?? 0),
-            'access_success_count' => (int) ($stats->success_count ?? 0),
-            'access_failed_count' => (int) ($stats->failed_count ?? 0),
+            'total_access_logs' => $totalCount,
+            'access_success_count' => $successCount,
+            'access_failed_count' => $totalCount - $successCount,
         ];
     }
 
     protected function fetchCategoryStats(): array
     {
         $stats = AccessLog::query()
-            ->selectRaw(
-                'SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cat_authorized,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cat_wrong_group,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cat_no_quota,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cat_inactive,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as cat_not_registered',
-                ['authorized', 'wrong group', 'no quota', 'inactive', 'not registered']
-            )
-            ->first();
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
 
         return [
-            'category_authorized' => (int) ($stats->cat_authorized ?? 0),
-            'category_wrong_group' => (int) ($stats->cat_wrong_group ?? 0),
-            'category_no_quota' => (int) ($stats->cat_no_quota ?? 0),
-            'category_inactive' => (int) ($stats->cat_inactive ?? 0),
-            'category_not_registered' => (int) ($stats->cat_not_registered ?? 0),
+            'category_authorized' => (int) ($stats->get('authorized') ?? 0),
+            'category_wrong_group' => (int) ($stats->get('wrong group') ?? 0),
+            'category_no_quota' => (int) ($stats->get('no quota') ?? 0),
+            'category_inactive' => (int) ($stats->get('inactive') ?? 0),
+            'category_not_registered' => (int) ($stats->get('not registered') ?? 0),
         ];
     }
 }
